@@ -1,4 +1,5 @@
 #define BATON_COOLDOWN 3.5 SECONDS
+#define BOT_REBATON_THRESHOLD 5 SECONDS
 
 /mob/living/simple_animal/bot/secbot
 	name = "\improper Securitron"
@@ -193,9 +194,7 @@
 
 /mob/living/simple_animal/bot/secbot/attackby(obj/item/W, mob/user, params)
 	..()
-	if(istype(W, /obj/item/weldingtool) && user.a_intent != INTENT_HARM) // Any intent but harm will heal, so we shouldn't get angry.
-		return
-	if(!isscrewdriver(W) && !locked && (W.force) && (!target) && (W.damtype != STAMINA))//If the target is locked, they are recieving damage from the screwdriver
+	if(W.force && !target && W.damtype != STAMINA)
 		retaliate(user)
 
 /mob/living/simple_animal/bot/secbot/emag_act(mob/user)
@@ -243,7 +242,7 @@
 
 /mob/living/simple_animal/bot/secbot/proc/cuff(mob/living/carbon/C)
 	mode = BOT_ARREST
-	playsound(loc, 'sound/weapons/cablecuff.ogg', 30, 1, -2)
+	playsound(loc, 'sound/weapons/cablecuff.ogg', 30, TRUE, -2)
 	C.visible_message("<span class='danger'>[src] is trying to put zipties on [C]!</span>",\
 						"<span class='userdanger'>[src] is trying to put zipties on you!</span>")
 	INVOKE_ASYNC(src, PROC_REF(cuff_callback), C)
@@ -332,6 +331,10 @@
 				back_to_idle()
 				return
 
+			if(target.stat == DEAD)
+				back_to_idle() // Stop beating up the dead guy
+				return
+
 			if(Adjacent(target) && isturf(target.loc) && !baton_delayed)	// if right next to perp
 				stun_attack(target)
 				mode = BOT_PREP_ARREST
@@ -343,16 +346,16 @@
 
 		if(BOT_PREP_ARREST)		// preparing to arrest target
 			// see if he got away. If he's no no longer adjacent or inside a closet or about to get up, we hunt again.
-			if(!Adjacent(target) || !isturf(target.loc) || world.time - target.stam_regen_start_time < 4 SECONDS && target.getStaminaLoss() <= 100)
+			if(!Adjacent(target) || !isturf(target.loc) || target.stam_regen_start_time - world.time <= BOT_REBATON_THRESHOLD|| target.getStaminaLoss() <= 100)
 				back_to_hunt()
 				return
 			// target is stunned and nearby
-			if(no_handcuffs) // should we not cuff?
-				back_to_idle()
-				return
 
 			if(!(iscarbon(target) && target.canBeHandcuffed()))
 				back_to_idle()
+				return
+
+			if(no_handcuffs) // should we not cuff?
 				return
 
 			if(currently_cuffing)
@@ -364,12 +367,12 @@
 
 			back_to_idle()
 
-		if(BOT_ARREST)
+		if(BOT_ARREST) // Fun fact: This is not called
 			if(!target || target.handcuffed)
 				back_to_idle()
 				return
 
-			if(!Adjacent(target) || !isturf(target.loc) || (target.loc != target_lastloc && target.AmountWeakened() < 4 SECONDS)) //if he's changed loc and about to get up or not adjacent or got into a closet, we prep arrest again.
+			if(!Adjacent(target) || !isturf(target.loc) || (target.loc != target_lastloc && target.stam_regen_start_time - world.time <= BOT_REBATON_THRESHOLD || target.getStaminaLoss() <= 100)) //if he's changed loc and about to get up or not adjacent or got into a closet, we prep arrest again.
 				back_to_hunt()
 				return
 			//Try arresting again if the target escapes.
@@ -409,7 +412,7 @@
 		if((C.stat) || (C.handcuffed))
 			continue
 
-		if((C.name == oldtarget_name) && (world.time < last_found + 100))
+		if((C.name == oldtarget_name) && (world.time < last_found + 5 SECONDS))
 			continue
 
 		threatlevel = C.assess_threat(src)
@@ -472,3 +475,4 @@
 	..()
 
 #undef BATON_COOLDOWN
+#undef BOT_REBATON_THRESHOLD

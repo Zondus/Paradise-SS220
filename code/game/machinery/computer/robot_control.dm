@@ -217,9 +217,9 @@
 			var/mob/living/silicon/robot/R = locateUID(params["uid"])
 			if(!can_detonate(usr, R, TRUE))
 				return
-			if(R.mind && R.mind.special_role && R.emagged)
-				to_chat(R, "<span class='userdanger'>Extreme danger!  Termination codes detected.  Scrambling security codes and automatic AI unlink triggered.</span>")
-				R.ResetSecurityCodes()
+			if(R.mind && R.mmi.syndiemmi && !R.emagged) // Emagging removes your syndie MMI protections.
+				to_chat(R, "<span class='danger'>Detonation code received. Self destructing... HARDWARE_OVERRIDE_SYNDICATE: Detonation aborted. Connection to NT systems severed.</span>")
+				R.UnlinkSelf()
 				. = TRUE
 				return
 			var/turf/T = get_turf(R)
@@ -243,7 +243,7 @@
 			R.SetLockdown(!R.lockcharge)
 			to_chat(R, "[!R.lockcharge ? "<span class='notice'>Your lockdown has been lifted!" : "<span class='alert'>You have been locked down!"]</span>")
 			if(R.connected_ai)
-				to_chat(R.connected_ai, "[!R.lockcharge ? "<span class='notice'>NOTICE - Cyborg lockdown lifted</span>" : "<span class='alert'>ALERT - Cyborg lockdown detected</span>"]: <a href='?src=[R.connected_ai.UID()];track=[html_encode(R.name)]'>[R.name]</a></span><br>")
+				to_chat(R.connected_ai, "[!R.lockcharge ? "<span class='notice'>NOTICE - Cyborg lockdown lifted</span>" : "<span class='alert'>ALERT - Cyborg lockdown detected</span>"]: <a href='byond://?src=[R.connected_ai.UID()];track=[html_encode(R.name)]'>[R.name]</a></span><br>")
 			. = TRUE
 		if("hackbot") // AIs hacking/emagging a borg
 			var/mob/living/silicon/robot/R = locateUID(params["uid"])

@@ -116,7 +116,9 @@
 		return
 	if(shredp.get_heat())
 		add_fingerprint(user)
-		user.visible_message(span_danger("\The [user] burns right through [src], turning it to ash. It flutters through the air before settling on the floor in a heap."), span_danger("You burn right through [src], turning it to ash. It flutters through the air before settling on the floor in a heap."))
+		user.visible_message(
+			span_danger("\The [user] burns right through [src], turning it to ash. It flutters through the air before settling on the floor in a heap."),
+			span_danger("You burn right through [src], turning it to ash. It flutters through the air before settling on the floor in a heap."))
 		fire_act()
 	else
 		..()
@@ -133,7 +135,7 @@
 	throw_range = 3
 	throw_speed = 2
 
-/obj/item/shredded_paper/Initialize()
+/obj/item/shredded_paper/Initialize(mapload)
 	. = ..()
 	if(prob(65))
 		color = pick("#8b8b8b","#e7e4e4", "#c9c9c9")

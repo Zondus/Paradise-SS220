@@ -107,7 +107,7 @@
 	add_queue('modular_ss220/aesthetics_sounds/sound/hev/death.ogg', 5 SECONDS, purge_queue=TRUE)
 
 //Mute
-/obj/item/clothing/suit/space/hev/proc/handle_speech(datum/source, mob/speech_args)
+/obj/item/clothing/suit/space/hev/proc/handle_speech(datum/source, list/speech_args)
 	SIGNAL_HANDLER
 	var/static/list/cancel_messages = list(
 		"Вам трудно говорить, когда костюм туго сдавливает ваше горло...",
@@ -190,7 +190,7 @@
 /obj/item/clothing/head/helmet/hev_helmet/extinguish_light(force = FALSE)
 	if(on)
 		light_toggle()
-		visible_message("<span class='danger'>[src]'s light fades and turns off.</span>")
+		visible_message(span_danger("[src]'s light fades and turns off."))
 
 #undef MORPHINE_INJECTION_DELAY
 #undef SOUND_BEEP

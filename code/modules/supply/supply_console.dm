@@ -221,7 +221,7 @@
 		var/shown_if_contraband = pack.contraband && can_order_contraband
 		var/shown_if_cmagged = pack.cmag_hidden && HAS_TRAIT(src, TRAIT_CMAGGED)
 
-		var/shown = (!pack.hidden || shown_if_hacked) && (!pack.contraband || shown_if_contraband) && (!HAS_TRAIT(src, TRAIT_CMAGGED) || shown_if_cmagged)
+		var/shown = (!pack.hidden || shown_if_hacked) && (!pack.contraband || shown_if_contraband) && (!pack.cmag_hidden || shown_if_cmagged)
 
 		if(pack.special)
 			shown &= pack.special_enabled
@@ -275,17 +275,17 @@
 			if(!P.can_order())
 				to_chat(user, "<span class='warning'>That cannot be ordered right now. Please try again later.</span>")
 				return
-
+			if(P.are_you_sure_you_want_to_be_banned)
+				var/we_warned_you = tgui_alert(user, "[P.are_you_sure_you_want_to_be_banned]", "ARE YOU SURE?", list("Yes", "No"))
+				if(!we_warned_you || we_warned_you == "No")
+					return
 			if(!P.singleton && params["multiple"])
-				var/num_input = tgui_input_number(user, "Amount", "How many crates?", max_value = MULTIPLE_CRATE_MAX)
-				if(!num_input || (!is_public && !is_authorized(user)) || ..()) // Make sure they dont walk away
+				var/num_input = tgui_input_number(user, "Amount", "How many crates?", max_value = MULTIPLE_CRATE_MAX, min_value = 1)
+				if(isnull(num_input) || (!is_public && !is_authorized(user)) || ..()) // Make sure they dont walk away
 					return
 				amount = clamp(round(num_input), 1, MULTIPLE_CRATE_MAX)
-
-			var/timeout = world.time + (60 SECONDS) // If you dont type the reason within a minute, theres bigger problems here
-			var/reason = tgui_input_text(user, "Reason", "Why do you require this item?", encode = FALSE)
-			if(world.time > timeout || !reason || (!is_public && !is_authorized(user)) || ..())
-				// Cancel if they take too long, they dont give a reason, they aint authed, or if they walked away
+			var/reason = tgui_input_text(user, "Reason", "Why do you require this item?", encode = FALSE, timeout = 60 SECONDS)
+			if(!reason || (!is_public && !is_authorized(user)) || ..())
 				return
 			reason = sanitize(copytext_char(reason, 1, 75)) // very long reasons are bad
 
@@ -344,7 +344,7 @@
 		for(var/datum/station_department/department in SSjobs.station_departments)
 			if(department.department_account == selected_account)
 				order.ordered_by_department = department //now that we know which department this is for, attach it to the order
-				order.orderedbyaccount = selected_account
+				order.set_account(selected_account)
 				order.requires_head_approval = TRUE
 
 				if(length(order.object.department_restrictions) && !(department.department_name in order.object.department_restrictions))
@@ -358,7 +358,7 @@
 	//===Handle Supply Order===
 	if(selected_account.account_type == ACCOUNT_TYPE_PERSONAL)
 		//if the account is a personal account (and doesn't require CT approval), go ahead and pay for it now
-		order.orderedbyaccount = selected_account
+		order.set_account(selected_account)
 		if(attempt_account_authentification(selected_account, user))
 			var/paid_for = FALSE
 			if(!order.requires_cargo_approval && pay_with_account(selected_account, order.object.get_cost(), "[order.object.name] Crate Purchase", "Cargo Requests Console", user, account_database.vendor_account))
@@ -385,7 +385,8 @@
 			if(account.account_type == ACCOUNT_TYPE_PERSONAL || isnull(order.ordered_by_department))
 				if(pay_with_account(account, order.object.get_cost(), "[pack.name] Crate Purchase", "Cargo Requests Console", user, account_database.vendor_account))
 					SSeconomy.process_supply_order(order, TRUE) //send 'er back through
-					update_static_data(user)
+					if(istype(order.object, /datum/supply_packs/abstract/shuttle))
+						update_static_data(user) // pack is going to be disabled, need to update pack data
 					SStgui.update_uis(src)
 					return TRUE
 				atom_say("ERROR: Account tied to order cannot pay, auto-denying order")
@@ -406,7 +407,8 @@
 				if(pay_with_account(account, pack.get_cost(), "[pack.name] Crate Purchase", "[src]", user, account_database.vendor_account))
 					order.requires_head_approval = FALSE
 					SSeconomy.process_supply_order(order, TRUE)
-					update_static_data(user)
+					if(istype(order.object, /datum/supply_packs/abstract/shuttle))
+						update_static_data(user) // pack is going to be disabled, need to update pack data
 					SStgui.update_uis(src)
 					investigate_log("| [key_name(user)] has authorized an order for [pack.name]. Remaining Cargo Balance: [cargo_account.credit_balance].", "cargo")
 					SSblackbox.record_feedback("tally", "cargo_shuttle_order", 1, pack.name)
@@ -441,8 +443,8 @@
 /obj/machinery/computer/supplycomp/proc/move_shuttle(mob/user)
 	if(is_public) // Public consoles cant move the shuttle. Dont allow exploiters.
 		return
-	if(SSshuttle.supply.canMove())
-		to_chat(user, "<span class='warning'>For safety reasons the automated supply shuttle cannot transport live organisms, undelivered mail, classified nuclear weaponry or homing beacons.</span>")
+	if(!SSshuttle.supply.canMove())
+		to_chat(user, "<span class='warning'>For safety reasons, the automated supply shuttle cannot transport [SSshuttle.supply.blocking_item].</span>")
 	else if(SSshuttle.supply.getDockedId() == "supply_home")
 		SSshuttle.toggleShuttle("supply", "supply_home", "supply_away", 1)
 		investigate_log("| [key_name(user)] has sent the supply shuttle away. Shuttle contents: [SSeconomy.sold_atoms]", "cargo")
@@ -460,7 +462,7 @@
 	var/attempt_pin = pin
 	if(customer_account.security_level != ACCOUNT_SECURITY_ID && !attempt_pin)
 		//if pin is not given, we'll prompt them here
-		attempt_pin = tgui_input_number(user, "Enter pin code", "Vendor transaction")
+		attempt_pin = tgui_input_number(user, "Enter pin code", "Vendor transaction", max_value = 99999)
 		if(!Adjacent(user) || !attempt_pin)
 			return FALSE
 	var/is_admin = is_admin(user)
@@ -520,6 +522,8 @@
 	to_chat(user, "<span class='notice sans'>Special supplies unlocked.</span>")
 	playsound(src, "sparks", 75, TRUE, SHORT_RANGE_SOUND_EXTRARANGE)
 	ADD_TRAIT(src, TRAIT_CMAGGED, CLOWN_EMAG)
+	update_static_data(user)
+	SStgui.update_uis(src)
 	return TRUE
 
 /obj/machinery/computer/supplycomp/public

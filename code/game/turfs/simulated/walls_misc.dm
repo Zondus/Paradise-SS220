@@ -56,7 +56,7 @@
 	smoothing_groups = list(SMOOTH_GROUP_WALLS, SMOOTH_GROUP_BRASS_WALL)
 	canSmoothWith = list(SMOOTH_GROUP_BRASS_WALL)
 
-/turf/simulated/wall/clockwork/Initialize()
+/turf/simulated/wall/clockwork/Initialize(mapload)
 	. = ..()
 	new /obj/effect/temp_visual/ratvar/wall(src)
 	new /obj/effect/temp_visual/ratvar/beam(src)
@@ -107,6 +107,7 @@
 	icon = 'icons/turf/walls/boss_wall.dmi'
 	icon_state = "boss_wall-0"
 	base_icon_state = "boss_wall"
+	baseturf = /turf/simulated/floor/lava/mapping_lava
 	explosion_block = 2
 	damage_cap = 600
 	hardness = 10

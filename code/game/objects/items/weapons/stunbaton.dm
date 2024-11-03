@@ -20,7 +20,7 @@
 	var/turned_on = FALSE
 	/// How much power does it cost to stun someone
 	var/hitcost = 1000
-	var/obj/item/stock_parts/cell/high/cell = null
+	var/obj/item/stock_parts/cell/cell = null // Adminbus tip: make this something that isn't a cell :)
 	/// the initial cooldown tracks the time between swings. tracks the world.time when the baton is usable again.
 	var/cooldown = 3.5 SECONDS
 	/// the time it takes before the target falls over
@@ -50,11 +50,16 @@
 /obj/item/melee/baton/proc/link_new_cell(unlink = FALSE)
 	if(unlink)
 		cell = null
-	else if(isrobot(loc.loc)) // First loc is the module
+		return
+	if(isrobot(loc?.loc)) // First loc is the module
 		var/mob/living/silicon/robot/R = loc.loc
 		cell = R.cell
+		return
+	if(!cell)
+		var/powercell = /obj/item/stock_parts/cell/high
+		cell = new powercell(src)
 	else
-		cell = new(src)
+		cell = new cell(src)
 
 /obj/item/melee/baton/suicide_act(mob/user)
 	user.visible_message("<span class='suicide'>[user] is putting the live [name] in [user.p_their()] mouth! It looks like [user.p_theyre()] trying to commit suicide!</span>")
@@ -83,11 +88,11 @@
 /obj/item/melee/baton/get_cell()
 	return cell
 
-/obj/item/melee/baton/mob_can_equip(mob/user, slot, disable_warning = TRUE)
+/obj/item/melee/baton/mob_can_equip(mob/user, slot, disable_warning = TRUE) // disable the warning
 	if(turned_on && (slot == SLOT_HUD_BELT || slot == SLOT_HUD_SUIT_STORE))
 		to_chat(user, "<span class='warning'>You can't equip [src] while it's active!</span>")
 		return FALSE
-	return ..(user, slot, disable_warning = TRUE) // call parent but disable warning
+	return ..()
 
 /obj/item/melee/baton/can_enter_storage(obj/item/storage/S, mob/user)
 	if(turned_on)
@@ -110,6 +115,7 @@
 		cell = null
 		turned_on = FALSE
 		update_icon(UPDATE_ICON_STATE)
+		return
 	if(cell.charge < (hitcost)) // If after the deduction the baton doesn't have enough charge for a stun hit it turns off.
 		turned_on = FALSE
 		update_icon()
@@ -182,9 +188,12 @@
 	var/mob/living/L = M
 
 	if(user.a_intent == INTENT_HARM)
+		. = ..() // Whack them too if in harm intent
+		if(!isnull(.)) // Attack returns null when successful
+			return
 		if(turned_on)
-			baton_stun(L, user)
-		return ..() // Whack them too if in harm intent
+			baton_stun(L, user, ignore_shield_check = TRUE)
+		return
 
 	if(!turned_on)
 		user.do_attack_animation(L)
@@ -195,19 +204,22 @@
 	if(baton_stun(L, user))
 		user.do_attack_animation(L)
 
-/// returning false results in no baton attack animation, returning true results in an animation.
-/obj/item/melee/baton/proc/baton_stun(mob/living/L, mob/user, skip_cooldown = FALSE)
+/// returning false results in no baton attack animation, returning true results in an animation. If ignore_shield_check is true, the baton will not run check shields, and will hit if not on cooldown.
+/obj/item/melee/baton/proc/baton_stun(mob/living/L, mob/user, skip_cooldown = FALSE, ignore_shield_check = FALSE)
 	if(cooldown > world.time && !skip_cooldown)
 		return FALSE
-
 	var/user_UID = user.UID()
 	if(HAS_TRAIT_FROM(L, TRAIT_WAS_BATONNED, user_UID)) // prevents double baton cheese.
+		return FALSE
+
+	if(hitcost > 0 && cell?.charge < hitcost)
+		to_chat(user, "<span class='warning'>[src] fizzles weakly as it makes contact. It needs more power!</span>")
 		return FALSE
 
 	cooldown = world.time + initial(cooldown) // tracks the world.time when hitting will be next available.
 	if(ishuman(L))
 		var/mob/living/carbon/human/H = L
-		if(H.check_shields(src, 0, "[user]'s [name]", MELEE_ATTACK)) //No message; check_shields() handles that
+		if(!ignore_shield_check && H.check_shields(src, 0, "[user]'s [name]", MELEE_ATTACK)) //No message; check_shields() handles that
 			playsound(L, 'sound/weapons/genhit.ogg', 50, TRUE)
 			return FALSE
 		H.Confused(10 SECONDS)
@@ -227,9 +239,12 @@
 		L.visible_message("<span class='danger'>[user] has stunned [L] with [src]!</span>",
 			"<span class='userdanger'>[L == user ? "You stun yourself" : "[user] has stunned you"] with [src]!</span>")
 		add_attack_logs(user, L, "stunned")
-	playsound(src, 'sound/weapons/egloves.ogg', 50, TRUE, -1)
+	play_hit_sound()
 	deductcharge(hitcost)
 	return TRUE
+
+/obj/item/melee/baton/proc/play_hit_sound()
+	playsound(src, 'sound/weapons/egloves.ogg', 50, TRUE, -1)
 
 /obj/item/melee/baton/proc/thrown_baton_stun(mob/living/carbon/human/L)
 	if(cooldown > world.time)
@@ -310,6 +325,77 @@
 	QDEL_NULL(sparkler)
 	return ..()
 
-/obj/item/melee/baton/cattleprod/baton_stun(mob/living/L, mob/user, skip_cooldown = FALSE)
+/obj/item/melee/baton/cattleprod/baton_stun(mob/living/L, mob/user, skip_cooldown = FALSE, ignore_shield_check = FALSE)
 	if(sparkler.activate())
 		return ..()
+
+/obj/item/melee/baton/loaded/borg_stun_arm
+	name = "electrically-charged arm"
+	desc = "A piece of scrap metal wired directly to your power cell."
+	hitcost = 100
+
+/obj/item/melee/baton/flayerprod
+	name = "stunprod"
+	desc = "A mechanical mass which you can use to incapacitate someone with."
+	icon_state = "swarmprod"
+	base_icon = "swarmprod"
+	item_state = "swarmprod"
+	force = 10
+	throwforce = 0 // Just in case
+	knockdown_duration = 6 SECONDS
+	knockdown_delay = 0 SECONDS
+	w_class = WEIGHT_CLASS_BULKY
+	flags = ABSTRACT | NODROP
+	turned_on = TRUE
+	cell = /obj/item/stock_parts/cell/flayerprod
+	/// The duration that stunning someone will disable their radio for
+	var/radio_disable_time = 8 SECONDS
+
+/obj/item/melee/baton/flayerprod/Initialize(mapload) // We are not making a flayerprod without a cell
+	link_new_cell()
+	return ..()
+
+/obj/item/melee/baton/flayerprod/update_icon_state()
+	return
+
+/obj/item/melee/baton/flayerprod/attackby(obj/item/I, mob/user, params)
+	return
+
+/obj/item/melee/baton/flayerprod/screwdriver_act(mob/living/user, obj/item/I)
+	return
+
+/obj/item/melee/baton/flayerprod/attack_self(mob/user)
+	return
+
+/obj/item/melee/baton/flayerprod/play_hit_sound()
+	playsound(src, 'sound/weapons/egloves.ogg', 25, TRUE, -1, ignore_walls = FALSE)
+
+/obj/item/melee/baton/flayerprod/baton_stun(mob/living/L, mob/user, skip_cooldown, ignore_shield_check = FALSE)
+	if(..())
+		disable_radio(L)
+		L.radio_enable_timer = addtimer(CALLBACK(src, PROC_REF(enable_radio), L), radio_disable_time, TIMER_UNIQUE | TIMER_OVERRIDE | TIMER_STOPPABLE | TIMER_DELETE_ME)
+		return TRUE
+	return FALSE
+
+/obj/item/melee/baton/flayerprod/proc/disable_radio(mob/living/L)
+	var/list/all_items = L.GetAllContents()
+	for(var/obj/item/radio/R in all_items)
+		R.on = FALSE
+		R.listening = FALSE
+		R.broadcasting = FALSE
+		L.visible_message("<span class='warning'>[R] buzzes loudly as it short circuits!</span>", blind_message = "<span class='notice'>You hear a loud, electronic buzzing.</span>")
+
+/obj/item/melee/baton/flayerprod/proc/enable_radio(mob/living/L)
+	var/list/all_items = L.GetAllContents()
+	for(var/obj/item/radio/R in all_items)
+		R.on = TRUE
+		R.listening = TRUE
+
+/obj/item/melee/baton/flayerprod/deductcharge(amount)
+	if(cell.charge < hitcost)
+		return
+	cell.use(amount)
+
+/obj/item/melee/baton/flayerprod/examine(mob/user)
+	. = ..()
+	. += "<span class='notice'>This one seems to be able to interfere with radio headsets.</span>"

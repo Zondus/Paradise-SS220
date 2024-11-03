@@ -182,6 +182,8 @@
 	metabolization_rate = 0.3
 	taste_mult = 0.9
 	taste_description = "slime"
+	goal_department = "Science"
+	goal_difficulty = REAGENT_GOAL_EASY
 
 /datum/reagent/mutagen/reaction_mob(mob/living/M, method=REAGENT_TOUCH, volume)
 	if(!M || !M.dna || HAS_TRAIT(M, TRAIT_BADDNA) || HAS_TRAIT(M, TRAIT_GENELESS))
@@ -225,7 +227,7 @@
 			var/mob/living/carbon/human/H = M
 			var/datum/dna/D = data["dna"]
 			if(!D.species.is_small)
-				H.change_dna(D, TRUE, TRUE)
+				H.change_dna(D, TRUE)
 
 	return ..()
 
@@ -279,6 +281,8 @@
 	process_flags = ORGANIC | SYNTHETIC
 	taste_description = "<span class='userdanger'>ACID</span>"
 	var/acidpwr = 10 //the amount of protection removed from the armour
+	goal_department = "Science"
+	goal_difficulty = REAGENT_GOAL_EASY
 
 /datum/reagent/acid/on_mob_life(mob/living/M)
 	var/update_flags = STATUS_UPDATE_NONE
@@ -336,6 +340,8 @@
 	description = "Fluorosulfuric acid is a an extremely corrosive super-acid."
 	color = "#5050FF"
 	acidpwr = 42
+	goal_department = "Science"
+	goal_difficulty = REAGENT_GOAL_NORMAL
 
 /datum/reagent/acid/facid/on_mob_life(mob/living/M)
 	var/update_flags = STATUS_UPDATE_NONE
@@ -389,6 +395,8 @@
 	color = "#0080ff"
 	reagent_state = LIQUID
 	taste_description = "vinegar"
+	goal_department = "Science"
+	goal_difficulty = REAGENT_GOAL_EASY
 
 /datum/reagent/acetic_acid/reaction_mob(mob/living/carbon/human/H, method = REAGENT_TOUCH, volume)
 	if(method != REAGENT_TOUCH)
@@ -430,13 +438,13 @@
 	description = "A toxin that affects the stamina of a person when injected into the bloodstream."
 	reagent_state = LIQUID
 	color = "#6E2828"
-	data = 13
 	taste_description = "bitterness"
+	var/damage_per_cycle = 13
 
 /datum/reagent/staminatoxin/on_mob_life(mob/living/M)
 	var/update_flags = STATUS_UPDATE_NONE
-	update_flags |= M.adjustStaminaLoss(REAGENTS_EFFECT_MULTIPLIER * data, FALSE)
-	data = max(data - 1, 3)
+	update_flags |= M.adjustStaminaLoss(damage_per_cycle * REAGENTS_EFFECT_MULTIPLIER, FALSE)
+	damage_per_cycle = max(damage_per_cycle - 1, 3)
 	return ..() | update_flags
 
 
@@ -460,12 +468,11 @@
 	id = "beer2"
 	description = "An alcoholic beverage made from malted grains, hops, yeast, and water."
 	color = "#664300" // rgb: 102, 67, 0
-	metabolization_rate = 0.1 * REAGENTS_METABOLISM
+	metabolization_rate = 0.1
 	drink_icon ="beerglass"
 	drink_name = "Beer glass"
 	drink_desc = "A freezing pint of beer"
 	taste_description = "beer"
-	taste_description = "piss water"
 
 /datum/reagent/beer2/on_mob_life(mob/living/M)
 	var/update_flags = STATUS_UPDATE_NONE
@@ -588,6 +595,8 @@
 	color = "#B44B00"
 	penetrates_skin = TRUE
 	taste_description = "bitterness"
+	goal_department = "Science"
+	goal_difficulty = REAGENT_GOAL_EASY
 
 /datum/reagent/formaldehyde/on_mob_life(mob/living/M)
 	var/update_flags = STATUS_UPDATE_NONE
@@ -604,6 +613,8 @@
 	color = "#B44B00"
 	penetrates_skin = TRUE
 	taste_description = "apples"
+	goal_department = "Science"
+	goal_difficulty = REAGENT_GOAL_EASY
 
 /datum/reagent/acetaldehyde/on_mob_life(mob/living/M)
 	var/update_flags = STATUS_UPDATE_NONE
@@ -645,6 +656,8 @@
 	color = "#60A584"
 	metabolization_rate = 1
 	taste_mult = 0
+	goal_department = "Science"
+	goal_difficulty = REAGENT_GOAL_EASY
 
 /datum/reagent/neurotoxin2/on_mob_life(mob/living/M)
 	var/update_flags = STATUS_UPDATE_NONE
@@ -685,6 +698,8 @@
 	metabolization_rate = 0.1
 	penetrates_skin = TRUE
 	taste_description = "almonds"
+	goal_department = "Science"
+	goal_difficulty = REAGENT_GOAL_NORMAL
 
 /datum/reagent/cyanide/on_mob_life(mob/living/M)
 	var/update_flags = STATUS_UPDATE_NONE
@@ -710,6 +725,8 @@
 	metabolization_rate = 0.3
 	penetrates_skin = TRUE
 	taste_description = "prickliness"
+	goal_department = "Science"
+	goal_difficulty = REAGENT_GOAL_NORMAL
 
 /datum/reagent/itching_powder/on_mob_life(mob/living/M)
 	var/update_flags = STATUS_UPDATE_STAT
@@ -907,14 +924,11 @@
 /datum/reagent/lipolicide/on_mob_life(mob/living/M)
 	var/update_flags = STATUS_UPDATE_NONE
 	if(!M.nutrition)
-		switch(rand(1,3))
-			if(1)
-				to_chat(M, "<span class='warning'>You feel hungry...</span>")
-			if(2)
-				update_flags |= M.adjustToxLoss(1, FALSE)
-				to_chat(M, "<span class='warning'>Your stomach grumbles painfully!</span>")
-			else
-				pass()
+		if(prob(66.66))
+			to_chat(M, "<span class='warning'>You feel hungry...</span>")
+		else if(prob(50))
+			update_flags |= M.adjustToxLoss(1, FALSE)
+			to_chat(M, "<span class='warning'>Your stomach grumbles painfully!</span>")
 	else
 		if(prob(60))
 			var/fat_to_burn = max(round(M.nutrition / 100, 1), 5)
@@ -1083,6 +1097,8 @@
 	reagent_state = LIQUID
 	color = "#773E73" //RGB: 47 24 45
 	lethality = 2 //Atrazine, however, is definitely toxic
+	goal_department = "Science"
+	goal_difficulty = REAGENT_GOAL_EASY
 
 
 /// To-Do; make this more realistic.

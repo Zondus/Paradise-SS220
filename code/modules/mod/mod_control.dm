@@ -8,7 +8,6 @@
 /obj/item/mod/control
 	name = "MOD control unit"
 	desc = "The control unit of a Modular Outerwear Device, a powered suit that protects against various environments."
-	icon_state = "standard-control"
 	icon_state = "mod_control"
 	item_state = "mod_control"
 	base_icon_state = "control"
@@ -128,14 +127,14 @@
 	if(length(req_access))
 		locked = TRUE
 	new_core?.install(src)
-	helmet = new /obj/item/clothing/head/mod(src)
+	helmet = build_head() // SS220 EDIT - original: new /obj/item/clothing/head/mod(src)
 	mod_parts += helmet
-	chestplate = new /obj/item/clothing/suit/mod(src)
+	chestplate = build_suit() // SS220 EDIT - original: new /obj/item/clothing/suit/mod(src)
 	chestplate.allowed += theme.allowed_suit_storage
 	mod_parts += chestplate
-	gauntlets = new /obj/item/clothing/gloves/mod(src)
+	gauntlets = build_gloves() // SS220 EDIT - original: new /obj/item/clothing/gloves/mod(src)
 	mod_parts += gauntlets
-	boots = new /obj/item/clothing/shoes/mod(src)
+	boots = build_shoes() // SS220 EDIT - original: new /obj/item/clothing/shoes/mod(src)
 	mod_parts += boots
 	var/list/all_parts = mod_parts + src
 	for(var/obj/item/part as anything in all_parts)
@@ -149,6 +148,7 @@
 		part.max_heat_protection_temperature = theme.max_heat_protection_temperature
 		part.min_cold_protection_temperature = theme.min_cold_protection_temperature
 		part.siemens_coefficient = theme.siemens_coefficient
+		part.flags_2 = theme.flag_2_flags
 	for(var/obj/item/part as anything in mod_parts)
 		RegisterSignal(part, COMSIG_OBJ_DECONSTRUCT, PROC_REF(on_part_destruction)) //look into
 		RegisterSignal(part, COMSIG_PARENT_QDELETING, PROC_REF(on_part_deletion))
@@ -158,6 +158,7 @@
 	for(var/obj/item/mod/module/module as anything in theme.inbuilt_modules)
 		module = new module(src)
 		install(module)
+	ADD_TRAIT(src, TRAIT_ADJACENCY_TRANSPARENT, ROUNDSTART_TRAIT)
 
 /obj/item/mod/control/Destroy()
 	if(active)
@@ -243,7 +244,7 @@
 /obj/item/mod/control/on_mob_move(direction, mob/user)
 	if(!jetpack_active || !isturf(user.loc))
 		return
-	var/turf/T = get_step(src, reverse_direction(direction))
+	var/turf/T = get_step(src, REVERSE_DIR(direction))
 	if(!has_gravity(T))
 		new /obj/effect/particle_effect/ion_trails(T, direction)
 
@@ -252,11 +253,12 @@
 	if(!wearer || old_loc != wearer || loc == wearer)
 		return
 	clean_up()
+	bag?.update_viewers()
 
 /obj/item/mod/control/MouseDrop(atom/over_object)
 	if(iscarbon(usr))
 		var/mob/M = usr
-		if(get_dist(usr, src) > 1) //1 as we want to access it if beside the user
+		if(!Adjacent(usr, src))
 			return
 
 		if(!over_object)
@@ -277,9 +279,8 @@
 				if(!M.unEquip(src, silent = TRUE))
 					return
 				M.put_in_active_hand(src)
-			else if(bag)
-				bag.forceMove(usr)
-				bag.show_to(usr)
+			else
+				bag?.open(usr)
 
 			add_fingerprint(M)
 
@@ -297,7 +298,6 @@
 			return TRUE
 		if(!core)
 			return TRUE
-		wrench.play_tool_sound(src, 100)
 		core.forceMove(drop_location())
 		update_charge_alert()
 		return TRUE
@@ -315,7 +315,6 @@
 	if(screwdriver.use_tool(src, user, 1 SECONDS))
 		if(active || activating)
 			to_chat(user, "<span class='warning'>Deactivate the suit first!</span>")
-		screwdriver.play_tool_sound(src, 100)
 		to_chat(user, "<span class='notice'>Cover [open ? "closed" : "opened"]</span>")
 		open = !open
 	return TRUE
@@ -400,7 +399,6 @@
 	else if(istype(attacking_item, /obj/item/mod/skin_applier))
 		return ..()
 	else if(bag && istype(attacking_item))
-		bag.forceMove(user)
 		bag.attackby(attacking_item, user, params)
 
 	return ..()
@@ -409,27 +407,31 @@
 	if(!iscarbon(user))
 		return
 	if(loc == user && user.back && user.back == src)
-		if(bag)
-			bag.forceMove(user)
-			bag.show_to(user)
+		bag?.open(user)
 	else
 		..()
 
 /obj/item/mod/control/AltClick(mob/user)
-	if(ishuman(user) && Adjacent(user) && !user.incapacitated(FALSE, TRUE) && bag)
-		bag.forceMove(user)
-		bag.show_to(user)
-		playsound(loc, "rustle", 50, TRUE, -5)
+	if(ishuman(user) && Adjacent(user) && !user.incapacitated(FALSE, TRUE))
+		bag?.open(user)
 		add_fingerprint(user)
+	else if(isobserver(user))
+		bag?.show_to(user)
+
+/obj/item/mod/control/attack_ghost(mob/user)
+	if(isobserver(user))
+		// Revenants don't get to play with the toys.
+		bag?.show_to(user)
+	return ..()
 
 /obj/item/mod/control/proc/can_be_inserted(I, stop_messages)
 	if(bag)
 		return bag.can_be_inserted(I, stop_messages)
 	return FALSE
 
-/obj/item/mod/control/proc/handle_item_insertion(I, prevent_warning)
+/obj/item/mod/control/proc/handle_item_insertion(I, mob/user, prevent_warning)
 	if(bag)
-		bag.handle_item_insertion(I, prevent_warning)
+		bag.handle_item_insertion(I, user, prevent_warning)
 
 /obj/item/mod/control/get_cell()
 	if(!open)
@@ -453,7 +455,7 @@
 	. = ..()
 	if(!active || !wearer)
 		return
-	to_chat(wearer, "<span class='warning'>[severity > 1 ? "Light" : "Strong"] electromagnetic pulse detected!")
+	to_chat(wearer, "<span class='warning'>[severity > EMP_HEAVY ? "Light" : "Strong"] electromagnetic pulse detected!")
 	if(emp_proof)
 		return
 	selected_module?.on_deactivation(display_message = TRUE)
@@ -485,7 +487,7 @@
 	return ..()
 
 /obj/item/mod/control/update_icon_state()
-	if(current_disguise)
+	if(current_disguise || isnull(chameleon_action) || active)
 		icon_state = "[skin]-[base_icon_state][active ? "-sealed" : ""]"
 	return ..()
 

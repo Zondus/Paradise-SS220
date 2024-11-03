@@ -65,12 +65,16 @@
 	var/start_time
 	/// The lifespan of the tgui_list_input, after which the window will close and delete itself.
 	var/timeout
+	/// The attached timer that handles this objects timeout deletion
+	var/deletion_timer
 	/// Boolean field describing if the tgui_list_input was closed by the user.
 	var/closed
 	/// The TGUI UI state that will be returned in ui_state(). Default: always_state
 	var/datum/ui_state/state
 	/// Whether the tgui list input is invalid or not (i.e. due to all list entries being null)
 	var/invalid = FALSE
+	/// The TGUI modal to use for this popup
+	var/modal_type = "ListInputModal"
 
 /datum/tgui_list_input/New(mob/user, message, title, list/items, default, timeout, ui_state)
 	src.title = title
@@ -98,12 +102,12 @@
 	if(timeout)
 		src.timeout = timeout
 		start_time = world.time
-		QDEL_IN(src, timeout)
+		deletion_timer = QDEL_IN(src, timeout)
 
 /datum/tgui_list_input/Destroy(force)
 	SStgui.close_uis(src)
 	state = null
-	QDEL_NULL(items)
+	deltimer(deletion_timer)
 	return ..()
 
 /**
@@ -120,7 +124,7 @@
 /datum/tgui_list_input/ui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)
-		ui = new(user, src, "ListInputModal")
+		ui = new(user, src, modal_type)
 		ui.set_autoupdate(FALSE)
 		ui.open()
 
@@ -150,9 +154,8 @@
 
 	switch(action)
 		if("submit")
-			if(!(params["entry"] in items))
+			if(!handle_submit_action(params))
 				return
-			set_choice(items_map[params["entry"]])
 			closed = TRUE
 			SStgui.close_uis(src)
 			return TRUE
@@ -160,6 +163,13 @@
 			closed = TRUE
 			SStgui.close_uis(src)
 			return TRUE
+
+
+/datum/tgui_list_input/proc/handle_submit_action(params)
+	if(!(params["entry"] in items))
+		return FALSE
+	set_choice(items_map[params["entry"]])
+	return TRUE
 
 /datum/tgui_list_input/proc/set_choice(choice)
 	src.choice = choice

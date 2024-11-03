@@ -121,7 +121,12 @@ SUBSYSTEM_DEF(tts220)
 		"меде" = "м еде",
 		"кз" = "Кэ Зэ",
 		"дтпа" = "Дэ Тэ Пэ А",
-		"слр" = "Эс Эл Эр"
+		"слр" = "Эс Эл Эр",
+		"кпп" = "Кэ Пэ Пэ",
+		"ик" = "И Ка",
+		"sslr" = "Эс Эс Эл Эр",
+		"сслр" = "Эс Эс Эл Эр",
+		"бкп" = "Бэ Ка Пэ"
 	)
 
 	var/static/list/tts_job_replacements = list(
@@ -322,21 +327,22 @@ SUBSYSTEM_DEF(tts220)
 	tts_requests_queue += list(list(text, seed, proc_callback))
 	return TRUE
 
-/datum/controller/subsystem/tts220/proc/get_tts(atom/speaker, mob/listener, message, seed_name, is_local = TRUE, effect = SOUND_EFFECT_NONE, traits = TTS_TRAIT_RATE_FASTER, preSFX = null, postSFX = null)
+/datum/controller/subsystem/tts220/proc/get_tts(atom/speaker, mob/listener, message, datum/tts_seed/tts_seed, is_local = TRUE, effect = SOUND_EFFECT_NONE, traits = TTS_TRAIT_RATE_FASTER, preSFX = null, postSFX = null)
 	if(!is_enabled)
 		return
 	if(!message)
 		return
 	if(isnull(listener) || !listener.client)
 		return
-	if(isnull(seed_name) || !(seed_name in tts_seeds))
+	if(ispath(tts_seed) && SStts220.tts_seeds[initial(tts_seed.name)])
+		tts_seed = SStts220.tts_seeds[initial(tts_seed.name)]
+	if(!istype(tts_seed))
 		return
-	var/datum/tts_seed/seed = tts_seeds[seed_name]
 
 	tts_wanted++
 	tts_trps_counter++
 
-	var/datum/tts_provider/provider = seed.provider
+	var/datum/tts_provider/provider = tts_seed.provider
 	if(!provider.is_enabled)
 		return
 	if(provider.throttle_check())
@@ -358,7 +364,7 @@ SUBSYSTEM_DEF(tts220)
 		text = provider.pitch_whisper(text)
 
 	var/hash = rustg_hash_string(RUSTG_HASH_MD5, lowertext(text))
-	var/filename = "data/tts_cache/[seed.name]/[hash]"
+	var/filename = "data/tts_cache/[tts_seed.name]/[hash]"
 
 
 	if(fexists("[filename].ogg"))
@@ -375,8 +381,8 @@ SUBSYSTEM_DEF(tts220)
 		LAZYADD(tts_queue[filename], play_tts_cb)
 		return
 
-	var/datum/callback/cb = CALLBACK(src, PROC_REF(get_tts_callback), speaker, listener, filename, seed, is_local, effect, preSFX, postSFX)
-	queue_request(text, seed, cb)
+	var/datum/callback/cb = CALLBACK(src, PROC_REF(get_tts_callback), speaker, listener, filename, tts_seed, is_local, effect, preSFX, postSFX)
+	queue_request(text, tts_seed, cb)
 	LAZYADD(tts_queue[filename], play_tts_cb)
 
 /datum/controller/subsystem/tts220/proc/get_tts_callback(atom/speaker, mob/listener, filename, datum/tts_seed/seed, is_local, effect, preSFX, postSFX, datum/http_response/response)
@@ -409,7 +415,7 @@ SUBSYSTEM_DEF(tts220)
 	if(!voice)
 		return
 
-	rustg_ss220_file_write_b64decode(voice, "[filename].ogg")
+	rustutils_file_write_b64decode(voice, "[filename].ogg")
 
 	if(!GLOB.configuration.tts.tts_cache_enabled)
 		addtimer(CALLBACK(src, PROC_REF(cleanup_tts_file), "[filename].ogg"), 30 SECONDS)
@@ -556,7 +562,7 @@ SUBSYSTEM_DEF(tts220)
 	. = replacetext_char(., acronyms, /proc/tts_acronym_replacer)
 	for(var/job in tts_job_replacements)
 		. = replacetext_char(., job, tts_job_replacements[job])
-	. = rustg_ss220_latin_to_cyrillic(.)
+	. = rustutils_latin_to_cyrillic(.)
 
 	var/static/regex/decimals = new(@"-?\d+\.\d+", "g")
 	. = replacetext_char(., decimals, /proc/dec_in_words)
@@ -566,8 +572,8 @@ SUBSYSTEM_DEF(tts220)
 	if(sanitized_messages_caching)
 		sanitized_messages_cache[hash] = .
 
-/proc/tts_cast(atom/speaker, mob/listener, message, seed_name, is_local = TRUE, effect = SOUND_EFFECT_NONE, traits = TTS_TRAIT_RATE_FASTER, preSFX = null, postSFX = null)
-	SStts220.get_tts(speaker, listener, message, seed_name, is_local, effect, traits, preSFX, postSFX)
+/proc/tts_cast(atom/speaker, mob/listener, message, datum/tts_seed/tts_seed, is_local = TRUE, effect = SOUND_EFFECT_NONE, traits = TTS_TRAIT_RATE_FASTER, preSFX = null, postSFX = null)
+	SStts220.get_tts(speaker, listener, message, tts_seed, is_local, effect, traits, preSFX, postSFX)
 
 /proc/tts_acronym_replacer(word)
 	var/match = SStts220.tts_acronym_replacements[lowertext(word)]

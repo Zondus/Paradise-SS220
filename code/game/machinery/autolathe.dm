@@ -38,7 +38,7 @@
 	var/list/categories = list("Tools", "Electronics", "Construction", "Communication", "Security", "Machinery", "Medical", "Miscellaneous", "Dinnerware", "Imported")
 	var/board_type = /obj/item/circuitboard/autolathe
 
-/obj/machinery/autolathe/Initialize()
+/obj/machinery/autolathe/Initialize(mapload)
 	. = ..()
 	AddComponent(/datum/component/material_container, list(MAT_METAL, MAT_GLASS), _show_on_examine=TRUE, _after_insert=CALLBACK(src, PROC_REF(AfterMaterialInsert)))
 	component_parts = list()
@@ -56,7 +56,7 @@
 	files = new /datum/research/autolathe(src)
 	matching_designs = list()
 
-/obj/machinery/autolathe/upgraded/Initialize()
+/obj/machinery/autolathe/upgraded/Initialize(mapload)
 	. = ..()
 	component_parts = list()
 	component_parts += new board_type(null)
@@ -67,7 +67,7 @@
 	component_parts += new /obj/item/stack/sheet/glass(null)
 	RefreshParts()
 
-/obj/machinery/autolathe/upgraded/gamma/Initialize()
+/obj/machinery/autolathe/upgraded/gamma/Initialize(mapload)
 	. = ..()
 	files = new /datum/research/autolathe/gamma(src)
 	adjust_hacked(TRUE)
@@ -111,7 +111,7 @@
 /obj/machinery/autolathe/ui_static_data(mob/user)
 	var/list/data = list()
 	data["categories"] = categories
-	if(!recipiecache.len)
+	if(!length(recipiecache))
 		var/list/recipes = list()
 		for(var/v in files.known_designs)
 			var/datum/design/D = files.known_designs[v]
@@ -164,7 +164,7 @@
 		data["busyamt"] = length(being_built) > 1 ? being_built[2] : 1
 	data["showhacked"] = hacked ? TRUE : FALSE
 	data["buildQueue"] = queue
-	data["buildQueueLen"] = queue.len
+	data["buildQueueLen"] = length(queue)
 	return data
 
 /obj/machinery/autolathe/ui_act(action, list/params, datum/tgui/ui, datum/ui_state/state)
@@ -179,7 +179,7 @@
 			queue = list()
 		if("remove_from_queue")
 			var/index = text2num(params["remove_from_queue"])
-			if(isnum(index) && ISINRANGE(index, 1, queue.len))
+			if(isnum(index) && ISINRANGE(index, 1, length(queue)))
 				remove_from_queue(index)
 				to_chat(usr, "<span class='notice'>Removed item from queue.</span>")
 		if("make")
@@ -213,7 +213,7 @@
 			if(!(multiplier in list(1, 10, 25, max_multiplier))) //"enough materials ?" is checked in the build proc
 				message_admins("Player [key_name_admin(usr)] attempted to pass invalid multiplier [multiplier] to an autolathe in ui_act. Possible href exploit.")
 				return
-			if((queue.len + 1) < queue_max_len)
+			if((length(queue) + 1) < queue_max_len)
 				add_to_queue(design_last_ordered, multiplier)
 			else
 				to_chat(usr, "<span class='warning'>The autolathe queue is full!</span>")
@@ -247,8 +247,8 @@
 	var/datum/component/material_container/materials = GetComponent(/datum/component/material_container)
 	var/temp_metal = materials.amount(MAT_METAL)
 	var/temp_glass = materials.amount(MAT_GLASS)
-	data["processing"] = being_built.len ? get_processing_line() : null
-	if(istype(queue) && queue.len)
+	data["processing"] = length(being_built) ? get_processing_line() : null
+	if(istype(queue) && length(queue))
 		var/list/data_queue = list()
 		for(var/list/L in queue)
 			var/datum/design/D = L[1]
@@ -257,7 +257,7 @@
 			temp_metal = max(temp_metal - LL[1], 1)
 			temp_glass = max(temp_glass - LL[2], 1)
 		data["queue"] = data_queue
-		data["queue_len"] = data_queue.len
+		data["queue_len"] = length(data_queue)
 	else
 		data["queue"] = null
 	return data
@@ -265,11 +265,10 @@
 /obj/machinery/autolathe/attackby(obj/item/O, mob/user, params)
 	if(busy)
 		to_chat(user, "<span class='alert'>The autolathe is busy. Please wait for completion of previous operation.</span>")
-		return 1
-	if(exchange_parts(user, O))
-		return
+		return TRUE
+
 	if(stat)
-		return 1
+		return TRUE
 
 	// Disks in general
 	if(istype(O, /obj/item/disk))
@@ -280,14 +279,17 @@
 
 				if(design.id in files.known_designs)
 					to_chat(user, "<span class='warning'>This design has already been loaded into the autolathe.</span>")
-					return 1
+					return TRUE
 
 				if(!files.CanAddDesign2Known(design))
 					to_chat(user, "<span class='warning'>This design is not compatible with the autolathe.</span>")
-					return 1
-				user.visible_message("[user] begins to load \the [O] in \the [src]...",
+					return TRUE
+
+				user.visible_message(
+					"[user] begins to load \the [O] in \the [src]...",
 					"You begin to load a design from \the [O]...",
-					"You hear the chatter of a floppy drive.")
+					"You hear the chatter of a floppy drive."
+				)
 				playsound(get_turf(src), 'sound/goonstation/machines/printer_dotmatrix.ogg', 50, 1)
 				busy = TRUE
 				if(do_after(user, 14.4, target = src))
@@ -298,11 +300,12 @@
 				busy = FALSE
 			else
 				to_chat(user, "<span class='warning'>That disk does not have a design on it!</span>")
-			return 1
+			return TRUE
+
 		else
 			// So that people who are bad at computers don't shred their disks
 			to_chat(user, "<span class='warning'>This is not the correct type of disk for the autolathe!</span>")
-			return 1
+			return TRUE
 
 	return ..()
 
@@ -413,11 +416,13 @@
 			new_item.materials[MAT_GLASS] /= coeff
 			new_item.pixel_y = rand(-5, 5)
 			new_item.pixel_x = rand(-5, 5)
+		if(is_station_level(z))
+			SSblackbox.record_feedback("tally", "station_autolathe_production", 1, "[D.type]")
 	SStgui.update_uis(src)
 	desc = initial(desc)
 
 /obj/machinery/autolathe/proc/can_build(datum/design/D, multiplier = 1, custom_metal, custom_glass)
-	if(D.make_reagents.len)
+	if(length(D.make_reagents))
 		return 0
 
 	var/coeff = get_coeff(D)
@@ -456,10 +461,10 @@
 		queue = list()
 	if(D)
 		queue.Add(list(list(D,multiplier)))
-	return queue.len
+	return length(queue)
 
 /obj/machinery/autolathe/proc/remove_from_queue(index)
-	if(!isnum(index) || !istype(queue) || (index<1 || index>queue.len))
+	if(!isnum(index) || !istype(queue) || (index<1 || index>length(queue)))
 		return 0
 	queue.Cut(index,++index)
 	return 1
@@ -469,7 +474,7 @@
 	var/multiplier = queue[1][2]
 	if(!D)
 		remove_from_queue(1)
-		if(queue.len)
+		if(length(queue))
 			return process_queue()
 		else
 			return
@@ -519,7 +524,7 @@
 	name = "syndicate autolathe"
 	board_type = /obj/item/circuitboard/autolathe/syndi
 
-/obj/machinery/autolathe/syndicate/Initialize()
+/obj/machinery/autolathe/syndicate/Initialize(mapload)
 	. = ..()
 	files = new /datum/research/autolathe/syndicate(src)
 

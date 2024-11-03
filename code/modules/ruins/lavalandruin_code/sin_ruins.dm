@@ -105,7 +105,7 @@
 	anchored = FALSE
 	density = TRUE
 
-/obj/structure/cursed_money/Initialize()
+/obj/structure/cursed_money/Initialize(mapload)
 	. = ..()
 	addtimer(CALLBACK(src, PROC_REF(collapse)), 600)
 
@@ -117,7 +117,7 @@
 /obj/structure/cursed_money/attack_hand(mob/living/user)
 	. = ..()
 	if(.)
-		return .
+		return
 
 	user.visible_message("<span class='warning'>[user] opens the bag and \
 		and removes a die. The bag then vanishes.</span>",

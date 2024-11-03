@@ -35,8 +35,6 @@
 
 	var/has_gravity = TRUE
 
-	var/no_air = null
-
 	var/air_doors_activated = FALSE
 
 	var/tele_proof = FALSE
@@ -93,6 +91,19 @@
 	/// Turrets use this list to see if individual power/lethal settings are allowed. Contains the /obj/machinery/turretid for this area
 	var/list/turret_controls = list()
 
+	/// The flags applied to request consoles spawned in this area.
+	/// See [RC_ASSIST], [RC_SUPPLY], [RC_INFO].
+	var/request_console_flags = 0
+	/// The name for any spawned request consoles. Defaults to the area name.
+	var/request_console_name
+	/// Whether request consoles in this area can send announcements.
+	var/request_console_announces = FALSE
+	/// Fire alarm camera network
+	var/fire_cam_network = "Fire Alarms Debug"
+	/// Power alarm camera network
+	var/power_cam_network = "Power Alarms Debug"
+	/// Atmosphere alarm camera network
+	var/atmos_cam_network = "Atmosphere Alarms Debug"
 	/*
 	Lighting Vars
 	*/
@@ -102,13 +113,13 @@
 /area/New(loc, ...)
 	if(!there_can_be_many) // Has to be done in New else the maploader will fuck up and find subtypes for the parent
 		GLOB.all_unique_areas[type] = src
-	..()
+	GLOB.all_areas += src
+	return ..()
 
 /area/Initialize(mapload)
 	if(is_station_level(z))
 		RegisterSignal(SSsecurity_level, COMSIG_SECURITY_LEVEL_CHANGED, PROC_REF(on_security_level_update))
 
-	GLOB.all_areas += src
 	icon_state = ""
 	layer = AREA_LAYER
 	uid = ++global_uid
@@ -229,11 +240,11 @@
 		return
 	for(var/thing in cameras)
 		var/obj/machinery/camera/C = locateUID(thing)
-		if(!QDELETED(C) && is_station_level(C.z))
+		if(!QDELETED(C))
 			if(state)
-				C.network -= "Power Alarms"
+				C.network -= power_cam_network
 			else
-				C.network |= "Power Alarms"
+				C.network |= power_cam_network
 
 	if(state)
 		GLOB.alarm_manager.cancel_alarm("Power", src, source)
@@ -251,8 +262,8 @@
 
 			for(var/thing in cameras)
 				var/obj/machinery/camera/C = locateUID(thing)
-				if(!QDELETED(C) && is_station_level(C.z))
-					C.network |= "Atmosphere Alarms"
+				if(!QDELETED(C))
+					C.network |= atmos_cam_network
 
 
 			GLOB.alarm_manager.trigger_alarm("Atmosphere", src, cameras, source)
@@ -260,8 +271,8 @@
 		else if(atmosalm == ATMOS_ALARM_DANGER)
 			for(var/thing in cameras)
 				var/obj/machinery/camera/C = locateUID(thing)
-				if(!QDELETED(C) && is_station_level(C.z))
-					C.network -= "Atmosphere Alarms"
+				if(!QDELETED(C))
+					C.network -= atmos_cam_network
 
 			GLOB.alarm_manager.cancel_alarm("Atmosphere", src, source)
 
@@ -323,8 +334,8 @@
 
 	for(var/thing in cameras)
 		var/obj/machinery/camera/C = locateUID(thing)
-		if(!QDELETED(C) && is_station_level(C.z))
-			C.network |= "Fire Alarms"
+		if(!QDELETED(C))
+			C.network |= fire_cam_network
 
 	GLOB.alarm_manager.trigger_alarm("Fire", src, cameras, source)
 
@@ -349,8 +360,8 @@
 
 	for(var/thing in cameras)
 		var/obj/machinery/camera/C = locateUID(thing)
-		if(!QDELETED(C) && is_station_level(C.z))
-			C.network -= "Fire Alarms"
+		if(!QDELETED(C))
+			C.network -= fire_cam_network
 
 	GLOB.alarm_manager.cancel_alarm("Fire", src, source)
 
@@ -510,7 +521,9 @@
 
 /proc/has_gravity(atom/AT, turf/T)
 	if(!T)
-		T = get_turf(AT)
+		T = get_turf(AT) // If we still don't have a turf, don't process the other stuff
+		if(!T)
+			return
 	var/area/A = get_area(T)
 	if(isspaceturf(T)) // Turf never has gravity
 		return 0
@@ -530,9 +543,26 @@
 		INVOKE_ASYNC(temp_airlock, TYPE_PROC_REF(/obj/machinery/door/airlock, prison_open))
 	for(var/obj/machinery/door/window/temp_windoor in src)
 		INVOKE_ASYNC(temp_windoor, TYPE_PROC_REF(/obj/machinery/door, open))
+	for(var/obj/machinery/door/poddoor/temp_poddoor in src)
+		INVOKE_ASYNC(temp_poddoor, TYPE_PROC_REF(/obj/machinery/door, open))
 
 /area/AllowDrop()
 	CRASH("Bad op: area/AllowDrop() called")
 
 /area/drop_location()
 	CRASH("Bad op: area/drop_location() called")
+
+/// Returns highest area type in the hirarchy of a given ruin or /area/station if it is given a station area.
+/// For an example the top parent of area/ruin/space/bar/backroom is area/ruin/space/bar
+/area/proc/get_top_parent_type()
+	var/top_parent_type = type
+
+	if(parent_type in subtypesof(/area/ruin))
+		// figure out which ruin we are on
+		while(!(type2parent(top_parent_type) in GLOB.ruin_prototypes))
+			top_parent_type = type2parent(top_parent_type)
+	else if(parent_type in subtypesof(/area/station))
+		top_parent_type = /area/station
+	else
+		top_parent_type = null
+	return top_parent_type

@@ -74,7 +74,7 @@
 /mob/living/carbon/human/get_screen_colour() //Fetch the colour matrix from wherever (e.g. eyes) so it can be compared to client.color.
 	. = ..()
 	if(.)
-		return .
+		return
 
 	var/obj/item/clothing/glasses/worn_glasses = glasses
 	var/obj/item/organ/internal/eyes/eyes = get_int_organ(/obj/item/organ/internal/eyes)
@@ -158,16 +158,26 @@
 		return U.sensor_mode
 	return SUIT_SENSOR_OFF
 
-/proc/offer_control(mob/M)
-	to_chat(M, "Control of your mob has been offered to dead players.")
+/proc/offer_control(mob/M, hours, hide_role)
+	if(HAS_TRAIT(M, TRAIT_BEING_OFFERED))
+		return
+	var/minhours
+	ADD_TRAIT(M, TRAIT_BEING_OFFERED, "admin_offer")
 	log_admin("[key_name(usr)] has offered control of ([key_name(M)]) to ghosts.")
-	var/minhours = input(usr, "Minimum hours required to play [M]?", "Set Min Hrs", 10) as num
-	message_admins("[key_name_admin(usr)] has offered control of ([key_name_admin(M)]) to ghosts with [minhours] hrs playtime")
 	var/question = "Do you want to play as [M.real_name ? M.real_name : M.name][M.job ? " ([M.job])" : ""]"
-	if(alert("Do you want to show the antag status?","Show antag status","Yes","No") == "Yes")
+	if(!hours)
+		minhours = input(usr, "Minimum hours required to play [M]?", "Set Min Hrs", 10) as num
+	else
+		minhours = hours
+	if(isnull(hide_role))
+		if(alert("Do you want to show the antag status?","Show antag status","Yes","No") == "Yes")
+			question += ", [M.mind?.special_role || "No special role"]"
+	else if(!hide_role)
 		question += ", [M.mind?.special_role ? M.mind?.special_role : "No special role"]"
+	message_admins("[key_name_admin(usr)] has offered control of ([key_name_admin(M)]) to ghosts with [minhours] hrs playtime")
 	var/list/mob/dead/observer/candidates = SSghost_spawns.poll_candidates("[question]?", poll_time = 10 SECONDS, min_hours = minhours, source = M)
 	var/mob/dead/observer/theghost = null
+	REMOVE_TRAIT(M, TRAIT_BEING_OFFERED, "admin_offer")
 
 	if(length(candidates))
 		if(QDELETED(M))
@@ -175,7 +185,8 @@
 		theghost = pick(candidates)
 		to_chat(M, "Your mob has been taken over by a ghost!")
 		message_admins("[key_name_admin(theghost)] has taken control of ([key_name_admin(M)])")
-		M.ghostize()
+		var/mob/dead/observer/ghost = M.ghostize(TRUE) // Keep them respawnable
+		ghost?.can_reenter_corpse = FALSE // but keep them out of their old body
 		M.key = theghost.key
 		dust_if_respawnable(theghost)
 	else
@@ -183,7 +194,8 @@
 		message_admins("No ghosts were willing to take control of [key_name_admin(M)])")
 
 /proc/check_zone(zone)
-	if(!zone)	return "chest"
+	if(!zone)
+		return "chest"
 	switch(zone)
 		if("eyes")
 			zone = "head"
@@ -203,18 +215,28 @@
 	if(prob(probability))
 		return zone
 
-	var/t = rand(1, 18) // randomly pick a different zone, or maybe the same one
-	switch(t)
-		if(1)		 return "head"
-		if(2)		 return "chest"
-		if(3 to 4)	 return "l_arm"
-		if(5 to 6)   return "l_hand"
-		if(7 to 8)	 return "r_arm"
-		if(9 to 10)  return "r_hand"
-		if(11 to 12) return "l_leg"
-		if(13 to 14) return "l_foot"
-		if(15 to 16) return "r_leg"
-		if(17 to 18) return "r_foot"
+	var/random_zone = rand(1, 18) // randomly pick a different zone, or maybe the same one
+	switch(random_zone)
+		if(1)
+			return "head"
+		if(2)
+			return "chest"
+		if(3 to 4)
+			return "l_arm"
+		if(5 to 6)
+			return "l_hand"
+		if(7 to 8)
+			return "r_arm"
+		if(9 to 10)
+			return "r_hand"
+		if(11 to 12)
+			return "l_leg"
+		if(13 to 14)
+			return "l_foot"
+		if(15 to 16)
+			return "r_leg"
+		if(17 to 18)
+			return "r_foot"
 
 	return zone
 
@@ -254,69 +276,71 @@
 	phrase = html_decode(phrase)
 	var/leng = length_char(phrase)
 	var/counter = length_char(phrase)
-	var/newphrase = ""
-	var/newletter = ""
+	var/list/newphrase = list()
+	var/newletter
 	while(counter >= 1)
-		newletter=copytext_char(phrase, (leng - counter) + 1, (leng - counter) + 2)
-		if(rand(1,3)==3)
-			if(lowertext(newletter)=="o")	newletter="u";	if(lowertext(newletter)=="о")	newletter="у";	if(lowertext(newletter)=="э")	newletter="и"
-			if(lowertext(newletter)=="s")	newletter="ch";	if(lowertext(newletter)=="с")	newletter="сш";	if(lowertext(newletter)=="г")	newletter="х"
-			if(lowertext(newletter)=="a")	newletter="ah";	if(lowertext(newletter)=="а")	newletter="ах"
-			if(lowertext(newletter)=="c")	newletter="k";	if(lowertext(newletter)=="ц")	newletter="сц"
-		switch(rand(1,15))
-			if(1,3,5,8)	newletter="[lowertext(newletter)]"
-			if(2,4,6,15)	newletter="[uppertext(newletter)]"
-			if(7)	newletter+=pick(slurletters)
+		newletter = copytext_char(phrase, (leng - counter) + 1, (leng - counter) + 2)
+		if(prob(33.33))
+			if(lowertext(newletter) == "o")
+				newletter = "u"
+			if(lowertext(newletter) == "о")
+				newletter = "у"
+			if(lowertext(newletter) == "э")
+				newletter = "и"
+			if(lowertext(newletter) == "s")
+				newletter = "ch"
+			if(lowertext(newletter) == "с")
+				newletter = "сш"
+			if(lowertext(newletter) == "a")
+				newletter = "ah"
+			if(lowertext(newletter) == "а")
+				newletter = "ах"
+			if(lowertext(newletter) == "c")
+				newletter = "k"
+			if(lowertext(newletter) == "ц")
+				newletter = "сц"
+		if(prob(60))
+			if(prob(11.11))
+				newletter += pick(slurletters)
 			else
-				pass()
-		newphrase+="[newletter]"
-		counter-=1
-	return newphrase
-
-/proc/stutter(n)
-	var/te = html_decode(n)
-	var/t = "" //placed before the message. Not really sure what it's for.
-	n = length_char(n) //length of the entire word
-	var/p = null
-	p = 1 //1 is the start of any word
-	while(p <= n) //while P, which starts at 1 is less or equal to N which is the length.
-		var/n_letter = copytext_char(te, p, p + 1)//copies text from a certain distance. In this case, only one letter at a time.
-		if(prob(80) && (lowertext(n_letter) in list("b","c","d","f","g","h","j","k","l","m","n","p","q","r","s","t","v","w","x","y","z")))
-			if(prob(5))
-				n_letter = text("[n_letter]-[n_letter]-[n_letter]") //replaces the current letter with this instead.
-			else
-				if(prob(5))
-					n_letter = null
+				if(prob(50))
+					newletter = lowertext(newletter)
 				else
-					n_letter = text("[n_letter]-[n_letter]")
-		t = text("[t][n_letter]") //since the above is ran through for each letter, the text just adds up back to the original word.
-		p++ //for each letter p is increased to find where the next letter will be.
-	return sanitize(copytext_char(t, 1, MAX_MESSAGE_LEN))
+					newletter = uppertext(newletter)
+		newphrase += newletter
+		counter -= 1
+	return newphrase.Join("")
 
-/proc/robostutter(n) //for robutts
-	var/te = html_decode(n)
-	var/t = ""//placed before the message. Not really sure what it's for.
-	n = length_char(n)//length of the entire word
-	var/p = null
-	p = 1//1 is the start of any word
-	while(p <= n)//while P, which starts at 1 is less or equal to N which is the length.
-		var/robotletter = pick("@", "!", "#", "$", "%", "&", "?") //for beep boop
-		var/n_letter = copytext_char(te, p, p + 1)//copies text from a certain distance. In this case, only one letter at a time.
-		if(prob(80) && (lowertext(n_letter) in list("b","c","d","f","g","h","j","k","l","m","n","p","q","r","s","t","v","w","x","y","z")))
-			if(prob(10))
-				n_letter = text("[n_letter]-[robotletter]-[n_letter]-[n_letter]")//replaces the current letter with this instead.
-			else
-				if(prob(20))
-					n_letter = text("[n_letter]-[robotletter]-[n_letter]")
-				else
-					if(prob(5))
-						n_letter = robotletter
-					else
-						n_letter = text("[n_letter]-[n_letter]")
-		t = text("[t][n_letter]")//since the above is ran through for each letter, the text just adds up back to the original word.
-		p++//for each letter p is increased to find where the next letter will be.
-	return sanitize(copytext_char(t, 1, MAX_MESSAGE_LEN))
+/proc/stutter(phrase, stamina_loss = 0, robotic = FALSE)
+	phrase = html_decode(phrase)
+	var/list/split_phrase = splittext_char(phrase, " ") //Split it up into words.
 
+	var/phrase_length = length_char(split_phrase)
+	var/stutter_chance = clamp(max(rand(25, 50), stamina_loss), 0, 100)
+	for(var/index in 1 to phrase_length)
+		if(!prob(stutter_chance))
+			continue
+		var/word = split_phrase[index] // Get the word at the index
+		var/first_letter = copytext_char(word, 1, 2)
+
+		//Search for dipthongs (two letters that make one sound.)
+		var/first_sound = copytext_char(word, 1, 3)
+		if(lowertext(first_sound) in list("ch", "th", "sh"))
+			first_letter = first_sound
+
+		var/second_repeat = first_letter
+		if(robotic && prob(50))
+			first_letter = pick("@", "!", "#", "$", "%", "&", "?")
+			if(prob(25))
+				second_repeat = pick("@", "!", "#", "$", "%", "&", "?")
+		//Repeat the first letter to create a stutter.
+		if(rand(1, 3) == 1) // more accurate than prob(33.333333)
+			word = "[first_letter]-[second_repeat]-[word]"
+		else
+			word = "[first_letter]-[word]"
+		split_phrase[index] = word // replace it
+
+	return sanitize(jointext(split_phrase, " "))
 
 /proc/Gibberish(t, p, replace_rate = 50)//t is the inputted message, and any value higher than 70 for p will cause letters to be replaced instead of added. replace_rate is the chance a letter is corrupted.
 	/* Turn text into complete gibberish! */
@@ -594,12 +618,6 @@
 		return FALSE
 	return TRUE
 
-/mob/proc/switch_to_camera(obj/machinery/camera/C)
-	if(!C.can_use() || incapacitated() || (get_dist(C, src) > 1 || machine != src || !has_vision()))
-		return FALSE
-	check_eye(src)
-	return TRUE
-
 /mob/proc/rename_character(oldname, newname)
 	if(!newname)
 		return FALSE
@@ -607,7 +625,7 @@
 	name = newname
 	if(mind)
 		mind.name = newname
-		if(mind.initial_account?.account_name == oldname)
+		if(!isnull(oldname) && mind?.initial_account?.account_name == oldname)
 			mind.initial_account.account_name = newname
 	if(dna)
 		dna.real_name = real_name
@@ -685,49 +703,42 @@
 
 		rename_character(oldname, newname)
 
-/proc/cultslur(n) // Inflicted on victims of a stun talisman
-	var/phrase = html_decode(n)
+/proc/cultslur(phrase)
+	phrase = html_decode(phrase)
 	var/leng = length_char(phrase)
 	var/counter = length_char(phrase)
-	var/newphrase=""
-	var/newletter=""
-	while(counter>=1)
-		newletter=copytext_char(phrase, (leng - counter) + 1, (leng - counter) + 2)
-		if(rand(1,2)==2)
-			if(lowertext(newletter)=="o")
-				newletter="u"
-			if(lowertext(newletter)=="t")
-				newletter="ch"
-			if(lowertext(newletter)=="a")
-				newletter="ah"
-			if(lowertext(newletter)=="u")
-				newletter="oo"
-			if(lowertext(newletter)=="c")
-				newletter=" NAR "
-			if(lowertext(newletter)=="s")
-				newletter=" SIE "
-		if(rand(1,4)==4)
-			if(newletter==" ")
-				newletter=" no hope... "
-			if(newletter=="H")
-				newletter=" IT COMES... "
+	var/list/newphrase = list()
+	var/newletter
+	while(counter >= 1)
+		newletter = copytext_char(phrase, (leng - counter) + 1, (leng - counter) + 2)
+		if(prob(50))
+			if(lowertext(newletter) == "o")
+				newletter = "u"
+			if(lowertext(newletter) == "t")
+				newletter = "ch"
+			if(lowertext(newletter) == "a")
+				newletter = "ah"
+			if(lowertext(newletter) == "u")
+				newletter = "oo"
+			if(lowertext(newletter) == "c")
+				newletter = " NAR "
+			if(lowertext(newletter) == "s")
+				newletter = " SIE "
+		if(prob(25))
+			if(newletter == " ")
+				newletter = " no hope... "
+			if(newletter == "H")
+				newletter = " IT COMES... "
 
-		switch(rand(1,15))
-			if(1)
-				newletter="'"
-			if(2)
-				newletter+="agn"
-			if(3)
-				newletter="fth"
-			if(4)
-				newletter="nglu"
-			if(5)
-				newletter="glor"
+		if(prob(33.33))
+			if(prob(20))
+				newletter += "agn"
 			else
-				pass()
+				newletter = pick("'", "fth", "nglu", "glor")
 
-		newphrase+="[newletter]";counter-=1
-	return newphrase
+		newphrase += newletter
+		counter -= 1
+	return newphrase.Join("")
 
 // Why does this exist?
 /mob/proc/get_preference(toggleflag)

@@ -1,14 +1,14 @@
 /mob
 	density = TRUE
 	layer = MOB_LAYER
-	animate_movement = 2
+	animate_movement = SLIDE_STEPS
 	pressure_resistance = 8
 	throwforce = 10
-	dont_save = TRUE //to avoid it messing up in buildmode saving
 	var/datum/mind/mind
 	blocks_emissive = EMISSIVE_BLOCK_GENERIC
 
-	var/stat = 0 //Whether a mob is alive or dead. TODO: Move this to living - Nodrak
+	/// Is this mob alive, unconscious or dead?
+	var/stat = CONSCIOUS // TODO: Move to /mob/living
 
 	/// The zone this mob is currently targeting
 	var/zone_selected = null
@@ -18,6 +18,7 @@
 	var/atom/movable/screen/m_select = null
 	var/atom/movable/screen/healths = null
 	var/atom/movable/screen/throw_icon = null
+	var/atom/movable/screen/staminas = null
 
 	/*A bunch of this stuff really needs to go under their own defines instead of being globally attached to mob.
 	A variable should only be globally attached to turfs/objects/whatever, when it is in fact needed as such.
@@ -27,13 +28,14 @@
 	*/
 	var/atom/movable/screen/leap_icon = null
 	var/atom/movable/screen/healthdoll/healthdoll = null
+	var/atom/movable/screen/nutrition/nutrition_display = null
 
 	var/use_me = TRUE //Allows all mobs to use the me verb by default, will have to manually specify they cannot
 	var/damageoverlaytemp = 0
 	var/computer_id = null
 	var/lastattacker = null // real name of the person  doing the attacking
 	var/lastattackerckey = null // their ckey
-	var/list/attack_log_old = list( )
+	var/list/attack_log_old = list()
 	var/list/debug_log = null
 
 	var/last_known_ckey = null	// Used in logging
@@ -44,7 +46,7 @@
 	var/memory = ""
 	var/notransform = FALSE	//Carbon
 	/// True for left hand active, otherwise for right hand active
-	var/hand = null
+	var/hand = HAND_BOOL_RIGHT
 	var/real_name = null
 	var/flavor_text = ""
 	var/med_record = ""
@@ -61,7 +63,6 @@
 	var/timeofdeath = 0 //Living
 
 	var/bodytemperature = 310.055	//98.7 F
-	var/flying = FALSE
 	var/nutrition = NUTRITION_LEVEL_FED + 50 //Carbon
 	var/satiety = 0 //Carbon
 	var/hunger_drain = HUNGER_FACTOR // how quickly the mob gets hungry; largely utilized by species.
@@ -73,8 +74,6 @@
 	var/lastKnownIP = null
 	/// movable atoms buckled to this mob
 	var/atom/movable/buckled = null //Living
-	/// movable atom we are buckled to
-	var/atom/movable/buckling
 
 	var/obj/item/l_hand = null //Living
 	var/obj/item/r_hand = null //Living
@@ -84,6 +83,7 @@
 	var/obj/item/storage/s_active = null //Carbon
 	var/obj/item/clothing/mask/wear_mask = null //Carbon
 
+	/// The instantiated version of the mob's hud.
 	var/datum/hud/hud_used = null
 
 	hud_possible = list(SPECIALROLE_HUD)
@@ -120,6 +120,9 @@
 	var/list/faction = list("neutral") //Used for checking whether hostile simple animals will attack you, possibly more stuff later
 
 	var/move_on_shuttle = TRUE // Can move on the shuttle.
+
+	/// The type of HUD that this mob uses. Not to
+	var/hud_type = /datum/hud
 
 	var/antagHUD = FALSE  // Whether AntagHUD is active right now
 	var/can_change_intents = TRUE //all mobs can change intents by default.
@@ -193,7 +196,7 @@
 
 	var/registered_z
 
-	var/obj/effect/proc_holder/ranged_ability //Any ranged ability the mob has, as a click override
+	var/datum/spell/ranged_ability //Any ranged ability the mob has, as a click override
 
 	/// Overrides the health HUD element state if set.
 	var/health_hud_override = HEALTH_HUD_OVERRIDE_NONE
@@ -203,7 +206,7 @@
 	var/datum/input_focus = null
 	/// Is our mob currently suiciding? Used for suicide code along with many different revival checks
 	var/suiciding = FALSE
-	/// Used for some screen objects, such as
+	/// Used for some screen objects
 	var/list/screens = list()
 	/// lazy list. contains /atom/movable/screen/alert only,  On /mob so clientless mobs will throw alerts properly
 	var/list/alerts
@@ -242,3 +245,8 @@
 	var/next_click_modifier = 1
 	/// Tracks the open UIs that a mob has, used in TGUI for various things, such as updating UIs
 	var/list/open_uis = list()
+	/// List of observers currently observing us.
+	var/list/mob/dead/observer/observers = list()
+	/// Does this mob speak OOC?
+	/// Controls whether they can say some symbols.
+	var/speaks_ooc = FALSE

@@ -1,5 +1,5 @@
 /datum/gear/donor/neon_shoes
-	display_name = "Неоновые кросовки"
+	display_name = "Неоновые кроссовки"
 	path = /obj/item/clothing/shoes/black/neon
 	donator_tier = 1
 	cost = 1
@@ -130,25 +130,45 @@
 	cost = 1
 
 /datum/gear/donor/driver
-	display_name = "Driver jacket."
+	display_name = "Driver jacket"
 	path = /obj/item/clothing/suit/jacket/driver
 	donator_tier = 2
 	cost = 1
 
 /datum/gear/donor/soundhand_black_jacket
-	display_name = "Черная куртка с тэгом группы Саундхэнд."
-	path = /obj/item/clothing/suit/storage/soundhand_black_jacket/soundhand_black_jacket_tag
+	display_name = "Черная куртка с тэгом группы Саундхэнд"
+	path = /obj/item/clothing/suit/storage/soundhand_black_jacket/tag
 	cost = 2
 
 /datum/gear/donor/soundhand_olive_jacket
-	display_name = "Оливковая куртка с тэгом группы Саундхэнд."
-	path = /obj/item/clothing/suit/storage/soundhand_olive_jacket/soundhand_olive_jacket_tag
+	display_name = "Оливковая куртка с тэгом группы Саундхэнд"
+	path = /obj/item/clothing/suit/storage/soundhand_olive_jacket/tag
 	cost = 2
 
 /datum/gear/donor/soundhand_brown_jacket
-	display_name = "Коричневая куртка с тэгом группы Саундхэнд."
-	path = /obj/item/clothing/suit/storage/soundhand_brown_jacket/soundhand_brown_jacket_tag
+	display_name = "Коричневая куртка с тэгом группы Саундхэнд"
+	path = /obj/item/clothing/suit/storage/soundhand_brown_jacket/tag
 	cost = 2
+
+/datum/gear/donor/soundhand_white_jacket
+	display_name = "Серебристая куртка Арии"
+	path = /obj/item/clothing/suit/storage/soundhand_white_jacket/tag
+	donator_tier = 5
+	cost = 2
+
+/datum/gear/donor/soundhand_metal_guitar
+	display_name = "Электро-гитара Арии"
+	path = /obj/item/instrument/soundhand_metal_guitar
+	donator_tier = 5
+	cost = 2
+
+/datum/gear/instrument/soundhand_bass_guitar
+	display_name = "Бас гитара"
+	path = /obj/item/instrument/soundhand_bass_guitar
+
+/datum/gear/instrument/soundhand_rock_guitar
+	display_name = "Рок гитара"
+	path = /obj/item/instrument/soundhand_rock_guitar
 
 // ID Skins
 /datum/gear/donor/id_decal_colored
@@ -300,3 +320,58 @@
 	path = /obj/item/id_skin/boykisser
 	donator_tier = 4
 	cost = 5
+
+// MARK: EI clothes
+/datum/gear/donor/ei_cloak
+	display_name = "Плащ Gold On Black"
+	path = /obj/item/clothing/suit/hooded/ei_cloak
+	donator_tier = 2
+	cost = 2
+
+/datum/gear/donor/ei_gloves
+	display_name = "Перчатки Gold On Black"
+	path = /obj/item/clothing/gloves/color/ei_gloves
+	donator_tier = 1
+	cost = 1
+
+/datum/gear/donor/ei_mask
+	display_name = "Дыхательная маска от EI"
+	path = /obj/item/clothing/mask/breath/ei_mask
+	donator_tier = 3
+	cost = 3
+
+/datum/gear/donor/ei_shoes
+	display_name = "Ботинки Gold On Black"
+	path = /obj/item/clothing/shoes/ei_shoes
+	donator_tier = 1
+	cost = 1
+
+/datum/gear/donor/ei_jacket
+	display_name = "Кожаная куртка Rock on Black"
+	path = /obj/item/clothing/suit/storage/ei_jacket
+	donator_tier = 2
+	cost = 1
+
+/datum/gear/donor/ei_coat
+	display_name = "Офицерский плащ EI"
+	path = /obj/item/clothing/suit/storage/ei_coat
+	donator_tier = 4
+	cost = 4
+
+/datum/gear/donor/ei_combat
+	display_name = "Тактическая водолазка Gold on Black"
+	path = /obj/item/clothing/under/ei_combat
+	donator_tier = 1
+	cost = 1
+
+/datum/gear/donor/ei_skirt
+	display_name = "Блузка с юбкой Gold on Black"
+	path = /obj/item/clothing/under/ei_skirt
+	donator_tier = 1
+	cost = 1
+
+/datum/gear/donor/ei_skirt_alt
+	display_name = "Юбка «Солнце» от EI"
+	path = /obj/item/clothing/under/ei_skirt_alt
+	donator_tier = 1
+	cost = 1

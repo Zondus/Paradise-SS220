@@ -15,7 +15,7 @@
 	var/cooldown = 0
 	var/pulseicon = "plutonium_core_pulse"
 
-/obj/item/nuke_core/Initialize()
+/obj/item/nuke_core/Initialize(mapload)
 	. = ..()
 	START_PROCESSING(SSobj, src)
 
@@ -210,8 +210,8 @@
 	var/mob/living/victim = hit_atom
 	if(victim.incorporeal_move || victim.status_flags & GODMODE || HAS_TRAIT(victim, TRAIT_SUPERMATTER_IMMUNE)) //try to keep this in sync with supermatter's consume fail conditions
 		return ..()
-	if(throwingdatum?.thrower)
-		var/mob/user = throwingdatum.thrower
+	var/mob/user = throwingdatum?.get_thrower()
+	if(user)
 		add_attack_logs(user, victim, "[victim] consumed by [src] thrown by [user] ")
 		message_admins("[src] has consumed [key_name_admin(victim)] [ADMIN_JMP(src)], thrown by [key_name_admin(user)].")
 		investigate_log("has consumed [key_name(victim)], thrown by [key_name(user)]", "supermatter")
@@ -328,7 +328,7 @@
 	usesound = 'sound/weapons/bladeslice.ogg'
 	var/uses_left
 
-/obj/item/scalpel/supermatter/Initialize()
+/obj/item/scalpel/supermatter/Initialize(mapload)
 	. = ..()
 	uses_left = rand(2, 4)
 

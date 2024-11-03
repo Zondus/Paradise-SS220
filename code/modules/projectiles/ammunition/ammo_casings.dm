@@ -169,7 +169,6 @@
 	muzzle_flash_strength = MUZZLE_FLASH_STRENGTH_STRONG
 	muzzle_flash_range = MUZZLE_FLASH_RANGE_STRONG
 
-
 /obj/item/ammo_casing/shotgun/buckshot
 	name = "buckshot shell"
 	desc = "A 12 gauge buckshot shell. Fires a spread of lethal shot."
@@ -179,14 +178,13 @@
 	variance = 25
 
 /obj/item/ammo_casing/shotgun/rubbershot
-	name = "rubber shot"
+	name = "rubbershot shell"
 	desc = "A 12 gauge shell filled with densely-packed rubber balls, used to incapacitate crowds from a distance."
 	icon_state = "cshell"
 	projectile_type = /obj/item/projectile/bullet/pellet/rubber
 	pellets = 6
 	variance = 35
 	materials = list(MAT_METAL=4000)
-
 
 /obj/item/ammo_casing/shotgun/beanbag
 	name = "beanbag slug"
@@ -246,9 +244,10 @@
 /obj/item/ammo_casing/shotgun/ion
 	name = "ion shell"
 	desc = "An advanced 12 gauge shell that fires a spread of ion bolts."
+	icon_state = "ionshell"
 	projectile_type = /obj/item/projectile/ion/weak
-	pellets = 4
-	variance = 35
+	pellets = 6
+	variance = 40
 	muzzle_flash_strength = MUZZLE_FLASH_STRENGTH_NORMAL
 	muzzle_flash_range = MUZZLE_FLASH_RANGE_NORMAL
 	muzzle_flash_color = LIGHT_COLOR_LIGHTBLUE
@@ -298,10 +297,19 @@
 	reagents.add_reagent("sodium_thiopental", 6)
 
 /obj/item/ammo_casing/shotgun/tranquilizer
-	name = "tranquilizer darts"
+	name = "tranquilizer dart"
 	desc = "A 12 gauge dart shell loaded with powerful tranquilizers."
 	icon_state = "nshell"
 	projectile_type = /obj/item/projectile/bullet/dart/syringe/tranquilizer
+	muzzle_flash_strength = MUZZLE_FLASH_STRENGTH_NORMAL
+	muzzle_flash_range = MUZZLE_FLASH_RANGE_NORMAL
+	materials = list(MAT_METAL=250)
+
+/obj/item/ammo_casing/shotgun/holy
+	name = "holy water dart"
+	desc = "A 12 gauge dart shell loaded with holy water."
+	icon_state = "hshell"
+	projectile_type = /obj/item/projectile/bullet/dart/syringe/holy
 	muzzle_flash_strength = MUZZLE_FLASH_STRENGTH_NORMAL
 	muzzle_flash_range = MUZZLE_FLASH_RANGE_NORMAL
 	materials = list(MAT_METAL=250)
@@ -311,6 +319,12 @@
 	desc = "A 12 gauge shell loaded with... confetti?"
 	icon_state = "partyshell"
 	projectile_type = /obj/item/projectile/bullet/confetti
+
+/obj/item/ammo_casing/shotgun/shrapnel
+	name = "shrapnel rounds"
+	projectile_type = /obj/item/projectile/bullet/shrapnel
+	pellets = 3
+	variance = 20
 
 /obj/item/ammo_casing/a556
 	name = "5.56mm round"
@@ -499,3 +513,12 @@
 	muzzle_flash_range = MUZZLE_FLASH_RANGE_NORMAL
 	muzzle_flash_color = LIGHT_COLOR_DARKRED
 	icon_state = "lasercasing"
+
+/obj/item/ammo_casing/caseless/c_foam
+	name = "\improper C-Foam blob"
+	desc = "You shouldn't see this! Make an issue report on Github!"
+	caliber = "c_foam"
+	projectile_type = /obj/item/projectile/c_foam
+	muzzle_flash_strength = MUZZLE_FLASH_RANGE_WEAK
+	muzzle_flash_range = MUZZLE_FLASH_RANGE_WEAK
+	muzzle_flash_color = LIGHT_COLOR_DARKRED

@@ -43,14 +43,6 @@
 	},
 /turf/template_noop,
 /area/template_noop)
-"dj" = (
-/obj/structure/table,
-/obj/item/gps/ruin{
-	pixel_x = 32;
-	gpstag = "####"
-	},
-/turf/simulated/floor/mineral/plastitanium/red/airless,
-/area/ruin/space/unpowered/unpowered_structures)
 "dE" = (
 /obj/structure/grille/broken,
 /obj/effect/landmark/damageturf,
@@ -355,6 +347,7 @@
 "zG" = (
 /obj/structure/table,
 /obj/structure/lattice,
+/obj/item/salvage/loot/syndicate,
 /turf/template_noop,
 /area/template_noop)
 "zT" = (
@@ -687,10 +680,10 @@
 /turf/simulated/floor/mineral/plastitanium/red/airless,
 /area/ruin/space/unpowered/unpowered_structures)
 "UY" = (
+/obj/effect/mapping_helpers/airlock/access/all/syndicate,
 /obj/machinery/door/airlock/external{
 	id_tag = "syndishuttle_door_ext";
-	name = "Ship External Access";
-	req_access_txt = "150"
+	name = "Ship External Access"
 	},
 /obj/machinery/door_control/no_emag{
 	pixel_y = 28
@@ -1546,7 +1539,7 @@ Ly
 Ly
 VC
 VC
-dj
+OI
 Ui
 hp
 VC

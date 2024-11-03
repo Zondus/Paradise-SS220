@@ -156,10 +156,6 @@
 /obj/machinery/light_construct/directional/east,
 /turf/simulated/floor/mineral/titanium,
 /area/ruin/space/powered)
-"cJ" = (
-/obj/effect/decal/cleanable/dirt,
-/turf/simulated/wall/indestructible/whiteshuttle/nodiagonal,
-/area/ruin/space/powered)
 "cK" = (
 /obj/effect/decal/cleanable/dirt,
 /mob/living/simple_animal/hostile/scavengers/gun/spacegun,
@@ -556,11 +552,8 @@
 /area/ruin/space/powered)
 "ng" = (
 /obj/structure/table/wood,
+/obj/item/clothing/mask/cigarette/rollie,
 /obj/item/clothing/mask/cigarette/rollie{
-	list_reagents = list("thc" = 40, "cbd" = 20)
-	},
-/obj/item/clothing/mask/cigarette/rollie{
-	list_reagents = list("thc" = 40, "cbd" = 20);
 	pixel_y = 3
 	},
 /obj/item/storage/fancy/rollingpapers{
@@ -568,7 +561,6 @@
 	pixel_x = 6
 	},
 /obj/item/clothing/mask/cigarette/rollie{
-	list_reagents = list("thc" = 40, "cbd" = 20);
 	pixel_y = 3;
 	pixel_x = -4
 	},
@@ -750,7 +742,7 @@
 /turf/simulated/floor/mineral/titanium,
 /area/ruin/space/powered)
 "rs" = (
-/obj/structure/rack/gunrack,
+/obj/structure/gunrack,
 /obj/effect/decal/cleanable/dirt,
 /obj/machinery/light_construct/directional/south,
 /turf/simulated/floor/plating,
@@ -873,7 +865,7 @@
 /turf/simulated/floor/mineral/plastitanium/red,
 /area/ruin/space/powered)
 "uk" = (
-/obj/structure/rack/gunrack,
+/obj/structure/gunrack,
 /obj/effect/decal/cleanable/cobweb,
 /turf/simulated/floor/plating,
 /area/ruin/space/powered)
@@ -1000,9 +992,8 @@
 /turf/simulated/floor/plating,
 /area/ruin/space/powered)
 "wF" = (
-/obj/machinery/door/airlock/external{
-	req_access_txt = "150"
-	},
+/obj/effect/mapping_helpers/airlock/access/all/syndicate,
+/obj/machinery/door/airlock/external,
 /obj/structure/fans/tiny,
 /turf/simulated/floor/plating,
 /area/ruin/space/powered)
@@ -1013,10 +1004,6 @@
 /area/ruin/space/powered)
 "xa" = (
 /obj/structure/chair/stool,
-/obj/item/gps/ruin{
-	pixel_x = 32;
-	gpstag = "####"
-	},
 /turf/simulated/floor/mineral/plastitanium/red,
 /area/ruin/space/powered)
 "xb" = (
@@ -1036,7 +1023,6 @@
 	amount = 1
 	},
 /obj/item/shard{
-	icon_state = "large";
 	pixel_y = 9
 	},
 /obj/effect/decal/cleanable/dirt,
@@ -1656,6 +1642,12 @@
 "Iw" = (
 /obj/structure/table,
 /obj/machinery/light_construct/directional/west,
+/obj/item/salvage/ruin/nanotrasen{
+	pixel_x = -5
+	},
+/obj/item/salvage/ruin/nanotrasen{
+	pixel_x = 5
+	},
 /turf/simulated/floor/mineral/titanium/blue,
 /area/ruin/space/powered)
 "Ix" = (
@@ -1867,7 +1859,7 @@
 /turf/simulated/floor/mineral/titanium/yellow,
 /area/ruin/space/powered)
 "LY" = (
-/obj/structure/rack/gunrack,
+/obj/structure/gunrack,
 /turf/simulated/floor/mineral/plastitanium/red,
 /area/ruin/space/powered)
 "Md" = (
@@ -1931,7 +1923,6 @@
 "Nm" = (
 /obj/structure/computerframe,
 /obj/item/shard{
-	icon_state = "large";
 	pixel_y = 9
 	},
 /obj/effect/decal/cleanable/glass,
@@ -1989,7 +1980,7 @@
 /turf/simulated/floor/mineral/titanium,
 /area/ruin/space/powered)
 "Po" = (
-/obj/structure/rack/gunrack,
+/obj/structure/gunrack,
 /obj/machinery/light/small/directional/north,
 /turf/simulated/floor/plating,
 /area/ruin/space/powered)
@@ -2028,7 +2019,7 @@
 /turf/simulated/floor/plating,
 /area/ruin/space/powered)
 "Qb" = (
-/obj/structure/door_assembly/door_assembly_ext,
+/obj/item/salvage/ruin/pirate,
 /turf/simulated/floor/plating,
 /area/ruin/space/powered)
 "Qd" = (
@@ -2116,7 +2107,7 @@
 /turf/simulated/floor/plating,
 /area/ruin/space/powered)
 "RF" = (
-/obj/structure/closet/crate/secure/loot,
+/obj/item/salvage/ruin/pirate,
 /turf/simulated/floor/mineral/plastitanium/red,
 /area/ruin/space/powered)
 "RM" = (
@@ -2346,17 +2337,17 @@
 "VB" = (
 /obj/effect/turf_decal/delivery,
 /obj/structure/closet/cardboard,
-/obj/item/food/snacks/baguette,
-/obj/item/food/snacks/baguette,
-/obj/item/food/snacks/beans,
-/obj/item/food/snacks/beans,
-/obj/item/food/snacks/beans,
-/obj/item/food/snacks/beans,
+/obj/item/food/baguette,
+/obj/item/food/baguette,
+/obj/item/food/beans,
+/obj/item/food/beans,
+/obj/item/food/beans,
+/obj/item/food/beans,
 /obj/effect/decal/cleanable/dirt,
-/obj/item/food/snacks/candy/candybar,
-/obj/item/food/snacks/candy/candybar,
-/obj/item/food/snacks/candy/candybar,
-/obj/item/food/snacks/candy/taffy,
+/obj/item/food/candy/candybar,
+/obj/item/food/candy/candybar,
+/obj/item/food/candy/candybar,
+/obj/item/food/candy/taffy,
 /turf/simulated/floor/mineral/titanium,
 /area/ruin/space/powered)
 "VF" = (
@@ -2430,7 +2421,7 @@
 /area/ruin/space/powered)
 "WD" = (
 /obj/structure/closet/crate/secure/weapon{
-	req_access_txt = "7"
+	req_access = list(7)
 	},
 /obj/item/mecha_parts/mecha_equipment/weapon/honker,
 /obj/item/mecha_parts/mecha_equipment/weapon/ballistic/missile_rack/flashbang,
@@ -3058,7 +3049,7 @@ Kb
 PT
 PT
 PT
-cJ
+Kb
 Cm
 Jr
 sD

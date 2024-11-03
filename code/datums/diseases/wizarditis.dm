@@ -11,7 +11,7 @@
 	permeability_mod = 0.75
 	severity = MINOR
 	/// A mapping of `num2text(SLOT_HUD_XYZ)` -> item path
-	var/list/magic_fashion = new
+	var/list/magic_fashion = list()
 
 
 /datum/disease/wizarditis/New()
@@ -58,9 +58,11 @@
 
 /datum/disease/wizarditis/proc/spawn_wizard_clothes()
 	var/mob/living/carbon/human/H = affected_mob
+	if(!istype(H))
+		return // Woe, wizard xeno upon ye
 
 	// Which slots can we replace?
-	var/list/eligible_slot_IDs = new
+	var/list/eligible_slot_IDs = list()
 	for(var/slot in magic_fashion)
 		var/slot_ID = text2num(slot) // Convert back to numeric defines
 
@@ -88,6 +90,8 @@
 /datum/disease/wizarditis/proc/teleport()
 	if(!is_teleport_allowed(affected_mob.z))
 		return
+	if(SEND_SIGNAL(affected_mob, COMSIG_MOVABLE_TELEPORTING, get_turf(affected_mob)) & COMPONENT_BLOCK_TELEPORT)
+		return FALSE
 
 	var/list/possible_areas = get_areas_in_range(80, affected_mob)
 	for(var/area/space/S in possible_areas)

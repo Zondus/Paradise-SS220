@@ -45,7 +45,7 @@
 
 	var/list/nametemp = list()
 	var/find
-	if(cam.aipictures.len == 0)
+	if(length(cam.aipictures) == 0)
 		to_chat(usr, "<span class='userdanger'>No images saved</span>")
 		return
 	for(var/datum/picture/t in cam.aipictures)
@@ -112,6 +112,13 @@
 
 	toggle_camera_mode()
 
+/obj/item/camera/siliconcam/ai_camera/verb/change_lens()
+	set category = "AI Commands"
+	set name = "Set Photo Focus"
+	set desc = "Changes the lens size of your photo camera"
+
+	change_size()
+
 /obj/item/camera/siliconcam/ai_camera/verb/view_images()
 	set category = "AI Commands"
 	set name = "View Images"
@@ -132,6 +139,13 @@
 	set desc = "Takes an image"
 
 	toggle_camera_mode()
+
+/obj/item/camera/siliconcam/robot_camera/verb/change_lens()
+	set category = "Robot Commands"
+	set name = "Set Photo Focus"
+	set desc = "Changes the lens size of your photo camera"
+
+	change_size()
 
 /obj/item/camera/siliconcam/robot_camera/verb/view_images()
 	set category ="Robot Commands"

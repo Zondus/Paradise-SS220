@@ -5,7 +5,6 @@
 	icon = 'icons/obj/assemblies.dmi'
 	icon_state = "mmi_empty"
 	w_class = WEIGHT_CLASS_NORMAL
-	origin_tech = "biotech=3"
 	origin_tech = "biotech=2;programming=3;engineering=2"
 
 	//Revised. Brainmob is now contained directly within object of transfer. MMI in this case.
@@ -81,7 +80,7 @@
 				alien = 0
 
 			if(radio_action)
-				radio_action.UpdateButtonIcon()
+				radio_action.UpdateButtons()
 			SSblackbox.record_feedback("amount", "mmis_filled", 1)
 		else
 			to_chat(user, "<span class='warning'>You can't drop [B]!</span>")
@@ -180,7 +179,7 @@
 /obj/item/mmi/proc/become_occupied(new_icon)
 	icon_state = new_icon
 	if(radio)
-		radio_action.UpdateButtonIcon()
+		radio_action.UpdateButtons()
 
 /obj/item/mmi/examine(mob/user)
 	. = ..()
@@ -213,9 +212,9 @@
 	mmi = null
 	return ..()
 
-/datum/action/generic/configure_mmi_radio/ApplyIcon(atom/movable/screen/movable/action_button/current_button)
-	icon_icon = mmi.icon
-	button_icon_state = mmi.icon_state
+/datum/action/generic/configure_mmi_radio/apply_button_overlay(atom/movable/screen/movable/action_button/current_button)
+	button_overlay_icon = mmi.icon
+	button_overlay_icon_state = mmi.icon_state
 	..()
 
 /obj/item/mmi/emp_act(severity)

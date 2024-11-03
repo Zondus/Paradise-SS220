@@ -45,13 +45,13 @@
 	UnregisterSignal(parent, list(COMSIG_MOVABLE_CROSSED, COMSIG_ATOM_ENTERED))
 
 /**
-	Called whenever the parent recieves either the `MOVABLE_CROSSED` signal or the `ATOM_ENTERED` signal.
+	Called whenever the parent receives either the `MOVABLE_CROSSED` signal or the `ATOM_ENTERED` signal.
 
 	Calls the `victim`'s `slip()` proc with the component's variables as arguments.
 	Additionally calls the parent's `after_slip()` proc on the `victim`.
 */
 /datum/component/slippery/proc/Slip(datum/source, mob/living/carbon/human/victim)
-	if(istype(victim) && !victim.flying)
+	if(istype(victim) && !HAS_TRAIT(victim, TRAIT_FLYING))
 		var/atom/movable/owner = parent
 		if(!isturf(owner.loc))
 			return

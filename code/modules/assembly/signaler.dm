@@ -17,7 +17,7 @@ GLOBAL_LIST_EMPTY(remote_signalers)
 	/// Signal freqency itself
 	var/frequency = RSD_FREQ
 
-/obj/item/assembly/signaler/Initialize()
+/obj/item/assembly/signaler/Initialize(mapload)
 	. = ..()
 	GLOB.remote_signalers |= src
 
@@ -64,11 +64,8 @@ GLOBAL_LIST_EMPTY(remote_signalers)
 
 // Activation pre-runner, handles cooldown and calls signal(), invoked from ui_act()
 /obj/item/assembly/signaler/activate()
-	if(cooldown > 0)
+	if(!..())
 		return
-
-	cooldown = 2
-	addtimer(CALLBACK(src, PROC_REF(process_cooldown)), 1 SECONDS)
 
 	signal()
 

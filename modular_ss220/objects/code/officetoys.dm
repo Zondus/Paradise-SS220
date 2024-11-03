@@ -151,8 +151,8 @@
 	icon_state = "newtoncradle"
 	var/datum/looping_sound/newtonballs/soundloop
 
-/obj/item/toy/desk/newtoncradle/Initialize()
-	..()
+/obj/item/toy/desk/newtoncradle/Initialize(mapload)
+	. = ..()
 	soundloop = new(list(src), FALSE)
 
 /obj/item/toy/desk/newtoncradle/attack_self(mob/user)
@@ -169,8 +169,8 @@
 	icon_state = "fan"
 	var/datum/looping_sound/fanblow/soundloop
 
-/obj/item/toy/desk/fan/Initialize()
-	..()
+/obj/item/toy/desk/fan/Initialize(mapload)
+	. = ..()
 	soundloop = new(list(src), FALSE)
 
 /obj/item/toy/desk/fan/attack_self(mob/user)
@@ -180,19 +180,6 @@
 		soundloop.start()
 	else
 		soundloop.stop()
-
-// Office toys spawner
-/obj/effect/spawner/lootdrop/officetoys
-	name = "office desk toy spawner"
-	icon = 'modular_ss220/objects/icons/officetoys.dmi'
-	icon_state = "spawner"
-	loot = list(
-		/obj/item/toy/desk/officetoy,
-		/obj/item/toy/desk/dippingbird,
-		/obj/item/toy/desk/newtoncradle,
-		/obj/item/toy/desk/fan,
-		/obj/item/hourglass
-	)
 
 // Item datums
 /datum/looping_sound/fanblow

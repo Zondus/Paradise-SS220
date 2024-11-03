@@ -66,7 +66,7 @@
 
 /obj/effect/mapping_helpers/Initialize(mapload)
 	..()
-	return late ? INITIALIZE_HINT_LATELOAD : qdel(src) // INITIALIZE_HINT_QDEL <-- Doesn't work
+	return late ? INITIALIZE_HINT_LATELOAD : INITIALIZE_HINT_QDEL
 
 /obj/effect/mapping_helpers/no_lava
 	icon_state = "no_lava"
@@ -84,18 +84,26 @@
 
 /obj/effect/mapping_helpers/airlock/Initialize(mapload)
 	. = ..()
+
 	if(!mapload)
 		log_world("[src] spawned outside of mapload!")
-		return
+		return INITIALIZE_HINT_QDEL
 
-	if(!(locate(/obj/machinery/door) in get_turf(src)))
-		log_world("[src] failed to find an airlock at [AREACOORD(src)]")
+/obj/effect/mapping_helpers/airlock/LateInitialize()
+	. = ..()
 
+	var/list/valid_airlocks = list()
 	for(var/obj/machinery/door/D in get_turf(src))
 		if(!is_type_in_list(D, blacklist))
-			payload(D)
+			valid_airlocks += D
 
-	return INITIALIZE_HINT_QDEL
+	if(length(valid_airlocks))
+		for(var/obj/machinery/door/D in valid_airlocks)
+			payload(D)
+	else
+		log_world("[src] failed to find any valid airlocks at [AREACOORD(src)]")
+
+	qdel(src)
 
 /obj/effect/mapping_helpers/airlock/proc/payload(obj/machinery/door/airlock/payload)
 	return
